@@ -18,15 +18,15 @@
   --accent:var(--tg-theme-button-color,#1f5f8b);
   --accent-fg:var(--tg-theme-button-text-color,#ffffff);
   --line:color-mix(in srgb,var(--muted) 25%,transparent);
-  --up:#0f8a5f; --down:#c4413a; --ma2:#c08a1e;
+  --up:#0f8a5f; --down:#c4413a; --ma2:#c08a1e; --sr:#7b45c9; --ld:#c2417f;
   --sans:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){:root{
   --bg:var(--tg-theme-bg-color,#121815); --panel:var(--tg-theme-secondary-bg-color,#1a221f);
   --fg:var(--tg-theme-text-color,#e6ece9); --muted:var(--tg-theme-hint-color,#93a19b);
-  --accent:var(--tg-theme-button-color,#5aa3d6); --up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; color-scheme:dark}}
-html.tg-dark{--up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; color-scheme:dark}
+  --accent:var(--tg-theme-button-color,#5aa3d6); --up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; --sr:#b18cf0; --ld:#f08cbd; color-scheme:dark}}
+html.tg-dark{--up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; --sr:#b18cf0; --ld:#f08cbd; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.45}
@@ -203,6 +203,7 @@ select{font-family:var(--sans)}
     <span><span class="sw" style="background:var(--accent)"></span>MA10</span>
     <span><span class="sw" style="background:var(--ma2)"></span>MA20</span>
     <span><span class="sw" style="background:var(--muted)"></span>เรทซื้อ/ขายของคุณ</span>
+    <span id="lgShops" hidden><span class="sw" style="background:var(--sr)"></span>SuperRich <span class="sw" style="background:var(--ld)"></span>Linda (เส้นทึบ = รับซื้อ, ประ = ขาย)</span>
     <span>แท่งเขียว = บาทอ่อน · แดง = บาทแข็ง</span>
   </div>
   <p class="note">บาทต่อหน่วยเงินต่างประเทศ (เยนต่อ 100) · อัตราอ้างอิง ECB ผ่าน Frankfurter วันทำการละ 1 ค่า ไม่ใช่อัตราซื้อขายของธนาคาร · แท่งสัปดาห์/เดือน: เปิด = ปิดของแท่งก่อน</p>
@@ -624,9 +625,9 @@ function renderChips(){
 }
 function select(c){ state.sel=c; if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged(); render(); }
 
-let chart, cs, ma1, ma2, plines = [], lastK = null;
+let chart, cs, ma1, ma2, plines = [], lastK = null, shopHist = {};
 function buildChart(){
-  if (chart) chart.remove();
+  if (chart) chart.remove(); shopHist = {};
   chart = LightweightCharts.createChart($("chart"),{
     autoSize:true,
     layout:{background:{type:"solid",color:css("--bg")}, textColor:css("--muted"), fontFamily:css("--mono"), fontSize:10},
@@ -658,6 +659,27 @@ function renderChart(){
   const t = (CFG.targets||{})[c] || {};
   [["below","เป้าล่าง"],["above","เป้าบน"]].forEach(([k,lab])=>{
     if (t[k]!=null) plines.push(cs.createPriceLine({price:t[k],color:css("--muted"),lineWidth:1,lineStyle:2,axisLabelVisible:true,title:lab}));
+  });
+  // เรทร้านตอนนี้: เส้นทึบ = รับซื้อ (ขายคืน), เส้นประ = ร้านขาย (คุณซื้อ)
+  const shopCol = {superrich: css("--sr"), linda: css("--ld")};
+  let anyShop = false;
+  Object.entries((SHOPS && SHOPS.shops) || {}).forEach(([key, s])=>{
+    const r = rowForNote(((s.rates)||{})[c], DEFAULT_NOTE[c]); if (!r) return;
+    anyShop = true;
+    const col = shopCol[key] || css("--muted"), tag = String(s.name).split(" ")[0];
+    plines.push(cs.createPriceLine({price:+r.buy, color:col, lineWidth:1, lineStyle:0, axisLabelVisible:true, title:`${tag} รับซื้อ`}));
+    plines.push(cs.createPriceLine({price:+r.sell, color:col, lineWidth:1, lineStyle:2, axisLabelVisible:true, title:`${tag} ขาย`}));
+  });
+  $("lgShops").hidden = !anyShop;
+  // ประวัติเรทรับซื้อของร้าน (สะสมวันละจุดตั้งแต่เริ่มใช้บอท)
+  Object.keys(shopHist).forEach(k=>{ chart.removeSeries(shopHist[k]); delete shopHist[k]; });
+  const hist = (SHOPS && Array.isArray(SHOPS.history)) ? SHOPS.history : [];
+  Object.keys(shopCol).forEach(key=>{
+    const pts = hist.map(h=>{ const v = h && h.r && h.r[c] && h.r[c][key]; return v && isFinite(v[0]) ? {time:String(h.d), value:+v[0]} : null; })
+                    .filter(x=>x && x.time>=cutIso);
+    if (pts.length < 2) return;
+    shopHist[key] = chart.addLineSeries({color:shopCol[key], lineWidth:2, lineStyle:1, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false});
+    shopHist[key].setData(pts);
   });
   positions.filter(p=>p.ccy===c).forEach(p=>{
     plines.push(cs.createPriceLine({price:p.rate,color:css("--accent"),lineWidth:1,lineStyle:0,axisLabelVisible:true,title:"ซื้อ"}));
