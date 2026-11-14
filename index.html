@@ -91,13 +91,28 @@ select{font-family:var(--sans)}
 .preview b{font-family:var(--mono);font-weight:500}
 .disclaimer{font-size:.7rem;color:var(--muted)}
 .toast{font-size:.8rem;color:var(--up)}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.help-btn{flex:0 0 auto;border:0;background:var(--panel);color:var(--accent);border-radius:999px;padding:6px 12px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer}
+#help{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+#help .wrap{gap:10px}
+#help details{background:var(--panel);border-radius:12px;padding:10px 12px}
+#help summary{font-weight:600;cursor:pointer;font-size:.95rem;list-style-position:inside}
+#help details[open] summary{margin-bottom:6px}
+#help p,#help li{font-size:.87rem;margin:0 0 6px;max-width:65ch}
+#help ol,#help ul{padding-left:20px;margin:0 0 6px}
+#help code{font-family:var(--mono);font-size:.82rem;background:var(--bg);padding:1px 5px;border-radius:4px}
+#help .ex{background:var(--bg);border-radius:8px;padding:8px 10px;font-size:.84rem;margin:4px 0 6px}
+#help .ex b{font-family:var(--mono);font-weight:500}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div>
-    <h1>ค่าเงินบาทรายสัปดาห์</h1>
-    <div class="sub" id="status">กำลังโหลด…</div>
+  <div class="topbar">
+    <div>
+      <h1>ค่าเงินบาทรายสัปดาห์</h1>
+      <div class="sub" id="status">กำลังโหลด…</div>
+    </div>
+    <button class="help-btn" type="button" id="helpOpen">? วิธีใช้</button>
   </div>
 
   <section class="card" aria-label="เงินบาทแข็งหรืออ่อน">
@@ -169,6 +184,81 @@ select{font-family:var(--sans)}
     <span>แท่งเขียว = บาทอ่อน · แดง = บาทแข็ง</span>
   </div>
   <p class="note">บาทต่อหน่วยเงินต่างประเทศ (เยนต่อ 100) · อัตราอ้างอิง ECB ผ่าน Frankfurter วันทำการละ 1 ค่า ไม่ใช่อัตราซื้อขายของธนาคาร · แท่งสัปดาห์/เดือน: เปิด = ปิดของแท่งก่อน</p>
+</div>
+
+<div id="help" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="wrap">
+    <div class="topbar">
+      <h1 id="helpTitle">วิธีใช้</h1>
+      <button class="help-btn" type="button" id="helpClose">✕ ปิด</button>
+    </div>
+
+    <details open>
+      <summary>แอปนี้ทำอะไร</summary>
+      <p>ช่วยคนที่ซื้อขายเงินสดต่างประเทศเป็นรายสัปดาห์ ดูว่าเงินบาทแข็งหรืออ่อน บันทึกเรทที่ซื้อ แล้วให้บอทแจ้งเตือนเมื่อเรทถึงจุดขายหรือจุดตัดขาดทุนที่คุณตั้งเอง พร้อมบอกกำไร/ขาดทุนเป็นเงินบาท</p>
+      <p><b>แอปไม่ได้แนะนำว่าควรซื้อหรือขายเมื่อไหร่</b> แจ้งตามตัวเลขที่คุณตั้งเท่านั้น</p>
+    </details>
+
+    <details>
+      <summary>เงินบาทตอนนี้ (แข็ง / อ่อน)</summary>
+      <ul>
+        <li><b>บาทแข็ง</b> = ใช้เงินบาทน้อยลงในการซื้อเงินต่างประเทศ (ซื้อได้ถูกลง)</li>
+        <li><b>บาทอ่อน</b> = เงินต่างประเทศที่ถืออยู่มีค่าเป็นบาทมากขึ้น (ขายได้เงินบาทมากขึ้น)</li>
+        <li><b>สัปดาห์นี้</b>: เกิน +0.15% = แข็งค่าขึ้น, ต่ำกว่า −0.15% = อ่อนค่าลง, ระหว่างนั้น = ทรงตัว</li>
+        <li><b>แถบเข็ม</b>: เทียบกับค่าเฉลี่ย 20 สัปดาห์ ห่างเกิน ±1% ถือว่าแข็ง/อ่อนกว่าปกติ ขอบแถบคือ ±3%</li>
+      </ul>
+      <p>คำนวณจากตะกร้าสกุลเงินที่ตั้งไว้ (USD EUR JPY CNY GBP SGD) ให้น้ำหนักเท่ากัน</p>
+    </details>
+
+    <details>
+      <summary>ตั้งราคาซื้อ และจุดขาย</summary>
+      <ol>
+        <li>กด <b>+ ตั้งราคาซื้อ</b> เลือกสกุลเงิน ใส่เรทที่ซื้อ และเงินบาทที่ใช้</li>
+        <li>ตั้งจุดขายได้ 2 แบบ: ใส่ <b>เรทขาย</b> แล้วแอปบอกกำไรเป็นบาท หรือใส่ <b>กำไรที่อยากได้ (บาท)</b> แล้วแอปคำนวณเรทให้</li>
+        <li>จุดตัดขาดทุนตั้งได้แบบเดียวกัน (ไม่บังคับ)</li>
+        <li>กด <b>บันทึก</b> — เส้นซื้อ (น้ำเงิน) ขาย (เขียว) ตัดขาดทุน (แดง) จะขึ้นบนกราฟ</li>
+      </ol>
+      <div class="ex">ตัวอย่าง: ซื้อ USD <b>10,000</b> บาท ที่เรท <b>33.916</b> อยากได้กำไร <b>300</b> บาท → แอปคำนวณว่าต้องขายที่ <b>35.109</b></div>
+      <p><b>เรทขายที่ไม่ขาดทุน</b> คือเรทที่ขายแล้วได้เงินบาทคืนเท่าที่จ่าย หลังหักส่วนต่างแล้ว</p>
+      <p>ขายไปแล้ว กด <b>ขายแล้ว / ลบ</b> แล้วกดยืนยันอีกครั้ง</p>
+    </details>
+
+    <details>
+      <summary>ส่วนต่างของร้านแลกเงิน</summary>
+      <p>ร้านแลกเงินรับซื้อคืนถูกกว่าที่ขายให้คุณ แอปหักส่วนต่างนี้ตอนคำนวณเงินที่จะได้คืน ค่าเริ่มต้น 0.5% เป็นแค่ค่าตั้งต้น ควรแก้เป็นส่วนต่างจริงของร้านที่คุณใช้ ใส่ 0 ถ้าไม่ต้องการหัก</p>
+    </details>
+
+    <details>
+      <summary>การแจ้งเตือนจากบอท</summary>
+      <ul>
+        <li><b>ทุกวัน</b>: ถ้าเรทถึงจุดขายหรือจุดตัดขาดทุน บอทส่งข้อความว่าขายตอนนี้ได้ประมาณกี่บาท (แจ้งครั้งเดียวต่อจุด)</li>
+        <li><b>ทุกวันเสาร์</b>: สรุปรายสัปดาห์ ภาพกราฟ บาทแข็ง/อ่อน กำไร-ขาดทุนทุกรายการ และสัญญาณ: เปลี่ยนแรงเกิน ±1%, ตัดเส้น MA10/MA20, แตะราคาเป้า</li>
+      </ul>
+      <p><b>สำคัญ:</b> บอทจะรู้รายการซื้อก็ต่อเมื่อเปิดแอปจากปุ่ม <b>📊 กราฟ / ตั้งราคาซื้อ</b> ใต้ช่องพิมพ์ในแชตบอท แล้วกดบันทึก ถ้าเปิดจากปุ่มในข้อความหรือเมนู แอปจะบันทึกไว้ดูในแอปอย่างเดียว</p>
+      <p>Telegram เก็บข้อมูลที่ส่งให้บอทไว้ 24 ชั่วโมง ถ้าคอมที่รันบอทไม่ได้เปิดภายใน 24 ชม. ให้เปิดแอปจากปุ่มนั้นแล้วกดบันทึกใหม่</p>
+    </details>
+
+    <details>
+      <summary>อ่านกราฟ</summary>
+      <ul>
+        <li>ตัวเลขคือ <b>บาทต่อ 1 หน่วย</b> (เยนต่อ 100 เยน)</li>
+        <li><b>แท่งเขียว</b> = บาทอ่อน (เรทขึ้น) · <b>แท่งแดง</b> = บาทแข็ง (เรทลง)</li>
+        <li>แท่งสัปดาห์/เดือน: เปิด = ราคาปิดของแท่งก่อน, ปิด = วันทำการสุดท้าย, สูง/ต่ำ = ค่าสูงสุด/ต่ำสุดในช่วง</li>
+        <li>เส้นน้ำเงิน = ค่าเฉลี่ย 10 แท่ง, เส้นเหลือง = 20 แท่ง, เส้นประเทา = ราคาเป้าใน config</li>
+        <li>ใช้นิ้วซูม/เลื่อนกราฟ แตะแท่งเพื่อดูราคาเปิด/สูง/ต่ำ/ปิด</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>ข้อมูลมาจากไหน / ข้อจำกัด</summary>
+      <ul>
+        <li>อัตราอ้างอิงธนาคารกลางยุโรป (ECB) ผ่าน Frankfurter API ฟรี วันทำการละ 1 ค่า ประกาศราว 21:00–22:00 น. เวลาไทย</li>
+        <li>ไม่ใช่เรทซื้อขายของธนาคารหรือร้านแลกเงิน <b>เช็คเรทจริงที่ร้านก่อนซื้อขายทุกครั้ง</b></li>
+        <li>ไม่มีราคาระหว่างวัน การแจ้งเตือนจึงเป็นรายวัน ไม่ใช่ทันที</li>
+        <li>รายการซื้อเก็บใน Telegram ของคุณ และบนเครื่องที่รันบอท ไม่ได้ขึ้นเว็บ</li>
+      </ul>
+    </details>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
@@ -470,6 +560,16 @@ function render(){
 $("tf").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.tf=v; render(); } };
 $("range").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.range=+v; render(); } };
 if (tg) tg.onEvent("themeChanged", ()=>{ document.documentElement.classList.toggle("tg-dark", tg.colorScheme==="dark"); buildChart(); render(); });
+
+// ---------- วิธีใช้ ----------
+function openHelp(){ $("help").hidden = false; $("help").scrollTop = 0; document.body.style.overflow = "hidden";
+  if (tg && tg.BackButton) tg.BackButton.show(); }
+function closeHelp(){ $("help").hidden = true; document.body.style.overflow = "";
+  if (tg && tg.BackButton) tg.BackButton.hide(); $("helpOpen").focus(); }
+$("helpOpen").onclick = openHelp;
+$("helpClose").onclick = closeHelp;
+if (tg && tg.BackButton) tg.BackButton.onClick(closeHelp);
+document.addEventListener("keydown", e=>{ if (e.key === "Escape" && !$("help").hidden) closeHelp(); });
 
 buildChart();
 loadPositions().then(p=>{ positions = p; load(); });
