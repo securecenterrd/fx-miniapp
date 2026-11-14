@@ -18,15 +18,15 @@
   --accent:var(--tg-theme-button-color,#1f5f8b);
   --accent-fg:var(--tg-theme-button-text-color,#ffffff);
   --line:color-mix(in srgb,var(--muted) 25%,transparent);
-  --up:#0f8a5f; --down:#c4413a; --ma2:#c08a1e; --sr:#7b45c9; --ld:#c2417f;
+  --up:#0f8a5f; --down:#c4413a; --ma2:#c08a1e; --sr:#7b45c9; --ld:#c2417f; --fc:#3a7d8c;
   --sans:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){:root{
   --bg:var(--tg-theme-bg-color,#121815); --panel:var(--tg-theme-secondary-bg-color,#1a221f);
   --fg:var(--tg-theme-text-color,#e6ece9); --muted:var(--tg-theme-hint-color,#93a19b);
-  --accent:var(--tg-theme-button-color,#5aa3d6); --up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; --sr:#b18cf0; --ld:#f08cbd; color-scheme:dark}}
-html.tg-dark{--up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; --sr:#b18cf0; --ld:#f08cbd; color-scheme:dark}
+  --accent:var(--tg-theme-button-color,#5aa3d6); --up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; --sr:#b18cf0; --ld:#f08cbd; --fc:#6cc3d5; color-scheme:dark}}
+html.tg-dark{--up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; --sr:#b18cf0; --ld:#f08cbd; --fc:#6cc3d5; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.45}
@@ -98,7 +98,7 @@ select{font-family:var(--sans)}
 .shop-tbl th{font-weight:500;color:var(--muted);font-size:.72rem;text-align:right;padding:4px 6px}
 .shop-tbl th:first-child,.shop-tbl td:first-child{text-align:left}
 .shop-tbl td{padding:5px 6px;text-align:right;font-family:var(--mono);border-top:1px solid var(--line)}
-.shop-tbl td:first-child{font-family:var(--sans);font-weight:600}
+.shop-tbl td:first-child{font-family:var(--sans);font-weight:600;white-space:nowrap}
 .shop-tbl b,.best-b{color:var(--up);font-weight:600}
 .verdict{font-size:.88rem;font-weight:600;padding:6px 8px;border-radius:8px}
 .verdict.ok{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up)}
@@ -203,9 +203,18 @@ select{font-family:var(--sans)}
     <span><span class="sw" style="background:var(--accent)"></span>MA10</span>
     <span><span class="sw" style="background:var(--ma2)"></span>MA20</span>
     <span><span class="sw" style="background:var(--muted)"></span>เรทซื้อ/ขายของคุณ</span>
+    <span id="lgFc" hidden><span class="sw" style="background:var(--fc)"></span>พยากรณ์ ค่ากลาง / ช่วง 80%</span>
     <span id="lgShops" hidden><span class="sw" style="background:var(--sr)"></span>SuperRich <span class="sw" style="background:var(--ld)"></span>Linda (เส้นทึบ = รับซื้อ, ประ = ขาย)</span>
     <span>แท่งเขียว = บาทอ่อน · แดง = บาทแข็ง</span>
   </div>
+  <section class="card" aria-label="พยากรณ์" id="fcCard" hidden>
+    <h2>พยากรณ์ <span id="fcPair" style="text-transform:none;letter-spacing:0"></span></h2>
+    <div class="shop-tbl-wrap"><table class="shop-tbl" id="fcTbl"></table></div>
+    <div class="pos-sub" id="fcShop"></div>
+    <div class="disclaimer" id="fcBt"></div>
+    <div class="disclaimer">โมเดลสถิติจากเรท ECB รายสัปดาห์ 5 ปี: แนวโน้ม 8 สัปดาห์ (หน่วงครึ่งหนึ่ง) + ความผันผวน · ช่วง 80% = 8 ใน 10 ครั้งราคาจริงควรอยู่ในช่วงนี้ · เรทร้านคาด = พยากรณ์ ECB + ส่วนต่างของร้านวันนี้</div>
+  </section>
+
   <p class="note">บาทต่อหน่วยเงินต่างประเทศ (เยนต่อ 100) · อัตราอ้างอิง ECB ผ่าน Frankfurter วันทำการละ 1 ค่า ไม่ใช่อัตราซื้อขายของธนาคาร · แท่งสัปดาห์/เดือน: เปิด = ปิดของแท่งก่อน</p>
 </div>
 
@@ -261,6 +270,17 @@ select{font-family:var(--sans)}
       </ul>
       <p><b>สำคัญ:</b> บอทจะรู้รายการซื้อก็ต่อเมื่อเปิดแอปจากปุ่ม <b>📊 กราฟ / ตั้งราคาซื้อ</b> ใต้ช่องพิมพ์ในแชตบอท แล้วกดบันทึก ถ้าเปิดจากปุ่มในข้อความหรือเมนู แอปจะบันทึกไว้ดูในแอปอย่างเดียว</p>
       <p>Telegram เก็บข้อมูลที่ส่งให้บอทไว้ 24 ชั่วโมง ถ้าคอมที่รันบอทไม่ได้เปิดภายใน 24 ชม. ให้เปิดแอปจากปุ่มนั้นแล้วกดบันทึกใหม่</p>
+    </details>
+
+    <details>
+      <summary>พยากรณ์ 🔮</summary>
+      <ul>
+        <li>ตาราง <b>พยากรณ์</b> ใต้กราฟ: ค่ากลางและช่วง 80% ของเรท 1, 2, 4 สัปดาห์ข้างหน้า, เรทรับซื้อของร้านที่คาด และโอกาสที่เรทจะสูงกว่าตอนนี้</li>
+        <li>ในกราฟรายสัปดาห์ เส้นสีฟ้าอมเขียวต่อท้ายคือกรวยพยากรณ์ 4 สัปดาห์ (เส้นทึบ = ค่ากลาง, เส้นประ = ช่วง 80%)</li>
+        <li>ในแต่ละรายการซื้อ 🔮 บอกมูลค่าขายคืนคาดเป็นบาท และโอกาสไม่ขาดทุน / ถึงเรทขาย / ต่ำกว่าจุดตัด ณ สิ้นสัปดาห์นั้น</li>
+        <li>วิธีคิด: แนวโน้ม 8 สัปดาห์ล่าสุด (หน่วงลงครึ่งหนึ่ง) + ความผันผวนย้อนหลัง · ทดสอบย้อนหลัง 52 สัปดาห์แสดงไว้ใต้ตาราง</li>
+        <li>เรทร้านคาด = พยากรณ์ ECB + ส่วนต่างของร้านวันนี้ (ถ้าร้านเปลี่ยนส่วนต่าง ตัวเลขจะคลาด)</li>
+      </ul>
     </details>
 
     <details>
@@ -329,6 +349,77 @@ function closedWeeks(series){
   if (day !== 6 && day !== 0 && w.length && w.at(-1).time >= mIso) w.pop();
   return w;
 }
+// ---------- พยากรณ์ (เหมือน forecast.py) ----------
+const Z50 = 0.6745, Z80 = 1.2816;
+function ncdf(x){ const t=1/(1+0.2316419*Math.abs(x)), d=0.3989423*Math.exp(-x*x/2);
+  const p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274)))); return x>0?1-p:p; }
+function fcModel(cl){
+  const lr=[]; for(let i=1;i<cl.length;i++) lr.push(Math.log(cl[i]/cl[i-1]));
+  if (lr.length < 20) return null;
+  const rec = lr.slice(-8), drift = 0.5*rec.reduce((a,b)=>a+b,0)/rec.length;
+  const w = lr.slice(-104), seed = w.slice(0,20);
+  let v = seed.reduce((a,r)=>a+r*r,0)/seed.length; w.forEach(r=>{ v = 0.94*v + 0.06*r*r; });
+  return {last:cl.at(-1), drift, vol:Math.sqrt(v)};
+}
+function fcAt(m,h){ const mu=Math.log(m.last)+m.drift*h, s=m.vol*Math.sqrt(h), e=Math.exp;
+  return {mid:e(mu), lo50:e(mu-Z50*s), hi50:e(mu+Z50*s), lo80:e(mu-Z80*s), hi80:e(mu+Z80*s), mu, s}; }
+const probAbove = (m,h,lvl) => { const f=fcAt(m,h); return 1-ncdf((Math.log(lvl)-f.mu)/f.s); };
+function fcBacktest(cl,h,n=52){
+  let inside=0, err=0, naive=0, cnt=0;
+  for (let t=Math.max(21,cl.length-n-h); t<cl.length-h; t++){
+    const m=fcModel(cl.slice(0,t+1)); if(!m) continue; const f=fcAt(m,h), a=cl[t+h];
+    inside += (a>=f.lo80 && a<=f.hi80); err += Math.abs(f.mid-a); naive += Math.abs(cl[t]-a); cnt++;
+  }
+  return cnt ? {cover:inside/cnt*100, mae:err/cnt, naive:naive/cnt, n:cnt} : null;
+}
+const fcCache = {};
+function fcFor(c){
+  if (fcCache[c]) return fcCache[c];
+  const wk = closedWeeks(state.daily[c]||[]); const cl = wk.map(k=>k.close);
+  const m = fcModel(cl); if (!m) return null;
+  return fcCache[c] = {m, lastWeek: wk.at(-1).time, bt1: fcBacktest(cl,1), bt4: fcBacktest(cl,4)};
+}
+// ส่วนต่างร้านเทียบ ECB ล่าสุด → ใช้แปลงพยากรณ์เป็นเรทร้าน
+function shopOffsets(c, note){
+  const ecb = latest(c); if (ecb==null) return [];
+  return quotes(c, note).map(([n,d,b,s])=>({name:n, buyOff:b-ecb, sellOff:s-ecb}));
+}
+const pct = x => (x*100).toFixed(0)+"%";
+function renderForecast(){
+  const c = state.sel, F = fcFor(c); if (!F){ $("fcCard").hidden = true; return; }
+  const offs = shopOffsets(c);
+  const bestBuyOff = offs.length ? Math.max(...offs.map(o=>o.buyOff)) : null;
+  let html = `<tr><th>อีก</th><th>ค่ากลาง ECB</th><th>ช่วง 80%</th>${bestBuyOff!=null?"<th>รับซื้อคาด*</th>":""}<th>โอกาสขึ้น</th></tr>`;
+  [1,2,4].forEach(h=>{
+    const f = fcAt(F.m,h);
+    html += `<tr><td>${h} สัปดาห์</td><td>${fmt(f.mid,c)}</td><td>${fmt(f.lo80,c)}–${fmt(f.hi80,c)}</td>`+
+      (bestBuyOff!=null?`<td>${fmt(f.mid+bestBuyOff,c)}</td>`:"")+`<td>${pct(probAbove(F.m,h,F.m.last))}</td></tr>`;
+  });
+  $("fcTbl").innerHTML = html;
+  $("fcPair").textContent = `· ${c}/THB จากปิดสัปดาห์ ${F.lastWeek}`;
+  $("fcShop").innerHTML = offs.length ? "*รับซื้อคาด = ค่ากลาง + ส่วนต่างร้านที่ให้รับซื้อสูงสุดวันนี้ (" +
+    offs.map(o=>`${esc(o.name.split(" ")[0])} ${o.buyOff>=0?"+":""}${o.buyOff.toFixed(3)}`).join(" · ") + ")" : "";
+  const b = F.bt1, b4 = F.bt4;
+  $("fcBt").textContent = b ? `ทดสอบย้อนหลัง ${b.n} สัปดาห์: ช่วง 80% ครอบราคาจริง ${b.cover.toFixed(0)}% (1 สัปดาห์)` +
+    (b4?` / ${b4.cover.toFixed(0)}% (4 สัปดาห์)`:"") + ` · ค่ากลางคลาดเฉลี่ย ±${fmt(b.mae,c)} บาท (ถ้าเดาว่าไม่เปลี่ยน ±${fmt(b.naive,c)})` : "";
+  $("fcCard").hidden = false;
+}
+// พยากรณ์ของรายการซื้อ: มูลค่าขายคืนคาด และโอกาส (ณ สิ้นสัปดาห์นั้น)
+function posForecast(p, sb){
+  const F = fcFor(p.ccy); if (!F) return "";
+  const off = sb.source === "shop" ? sb.rate - (latest(p.ccy)||sb.rate) : 0;
+  const v = r => sb.source==="shop" ? valueShop(p,r+off) : valueAt(p,r);
+  const be = (sb.source==="shop" ? p.rate : p.rate/(1-(p.spread||0)/100)) - off;
+  const line = h => {
+    const f = fcAt(F.m,h);
+    let t = `อีก ${h} สัปดาห์: ขายคืนคาด ~${Math.round(v(f.mid)).toLocaleString("th-TH")} บาท (${baht(v(f.mid)-p.thb)}) ช่วง 80% ${baht(v(f.lo80)-p.thb)} ถึง ${baht(v(f.hi80)-p.thb)} · โอกาสไม่ขาดทุน ${pct(probAbove(F.m,h,be))}`;
+    if (p.tp) t += ` · ถึงเรทขาย ${pct(probAbove(F.m,h,p.tp-off))}`;
+    if (p.sl) t += ` · ต่ำกว่าจุดตัด ${pct(1-probAbove(F.m,h,p.sl-off))}`;
+    return `<div class="shop-line">🔮 ${t}</div>`;
+  };
+  return line(1) + line(4);
+}
+
 const sma = (arr,n,i) => i>=n-1 ? arr.slice(i-n+1,i+1).reduce((a,b)=>a+b,0)/n : null;
 
 // ---------- ดัชนีเงินบาท (ตะกร้าเท่ากัน, สูงขึ้น = บาทแข็ง) ----------
@@ -472,7 +563,7 @@ function renderPositions(){
         <span class="pos-pl ${pl>=0?"up":"down"}">${baht(pl)}</span></div>
       <div class="pos-sub">ซื้อที่ <b>${fmt(p.rate,p.ccy)}</b> ใช้ <b>${p.thb.toLocaleString("th-TH")}</b> บาท${p.note?` · ธนบัตรใบละ ${p.note.toLocaleString("th-TH")}`:""}</div>
       ${verdict}
-      ${perShop || `<div class="shop-line">ไม่มีเรทร้าน ใช้เรทอ้างอิง ECB ${fmt(r,p.ccy)} หักส่วนต่าง ${p.spread||0}%</div>`}
+      ${perShop}${posForecast(p, sb)}${perShop ? "" : `<div class="shop-line">ไม่มีเรทร้าน ใช้เรทอ้างอิง ECB ${fmt(r,p.ccy)} หักส่วนต่าง ${p.spread||0}%</div>`}
       <div class="pos-sub">${p.tp?`ขายที่ <b>${fmt(p.tp,p.ccy)}</b> = ${baht(val(p.tp)-p.thb)} ${r>=p.tp?" ✅ ถึงแล้ว":` (อีก ${((p.tp/r-1)*100).toFixed(2)}%)`}`:"ยังไม่ตั้งเรทขาย"}${p.sl?` · ตัดขาดทุน <b>${fmt(p.sl,p.ccy)}</b> = ${baht(val(p.sl)-p.thb)}`:""}</div>
       ${status}
       <div style="display:flex;gap:4px;justify-content:flex-end">
@@ -625,7 +716,7 @@ function renderChips(){
 }
 function select(c){ state.sel=c; if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged(); render(); }
 
-let chart, cs, ma1, ma2, plines = [], lastK = null, shopHist = {};
+let chart, cs, ma1, ma2, fcMid, fcLo, fcHi, plines = [], lastK = null, shopHist = {};
 function buildChart(){
   if (chart) chart.remove(); shopHist = {};
   chart = LightweightCharts.createChart($("chart"),{
@@ -639,6 +730,8 @@ function buildChart(){
   cs = chart.addCandlestickSeries({upColor:css("--up"),downColor:css("--down"),borderVisible:false,wickUpColor:css("--up"),wickDownColor:css("--down")});
   ma1 = chart.addLineSeries({color:css("--accent"),lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
   ma2 = chart.addLineSeries({color:css("--ma2"),lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+  const fcOpt = w => ({color:css("--fc"),lineWidth:w,lineStyle:w>1?0:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+  fcMid = chart.addLineSeries(fcOpt(2)); fcLo = chart.addLineSeries(fcOpt(1)); fcHi = chart.addLineSeries(fcOpt(1));
   chart.subscribeCrosshairMove(p=>{ const d = p && p.time ? p.seriesData.get(cs) : null; showOhlc(d||lastK); });
 }
 function showOhlc(k){
@@ -686,6 +779,15 @@ function renderChart(){
     if (p.tp) plines.push(cs.createPriceLine({price:p.tp,color:css("--up"),lineWidth:1,lineStyle:2,axisLabelVisible:true,title:"ขาย"}));
     if (p.sl) plines.push(cs.createPriceLine({price:p.sl,color:css("--down"),lineWidth:1,lineStyle:2,axisLabelVisible:true,title:"ตัดขาดทุน"}));
   });
+  // กรวยพยากรณ์ 4 สัปดาห์ (มุมมองรายสัปดาห์)
+  const F = state.tf === "W" ? fcFor(c) : null;
+  if (F){
+    const start = new Date(F.lastWeek+"T00:00:00Z");
+    const pts = k => [0,1,2,3,4].map(h=>{ const d=new Date(start); d.setUTCDate(d.getUTCDate()+7*h);
+      return {time:d.toISOString().slice(0,10), value: h ? fcAt(F.m,h)[k] : F.m.last}; });
+    fcMid.setData(pts("mid")); fcLo.setData(pts("lo80")); fcHi.setData(pts("hi80"));
+  } else { fcMid.setData([]); fcLo.setData([]); fcHi.setData([]); }
+  $("lgFc").hidden = !F;
   chart.timeScale().fitContent();
   lastK = data.at(-1); showOhlc(lastK);
 }
@@ -693,7 +795,7 @@ function render(){
   if (!state.daily) return;
   document.querySelectorAll("#tf button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===state.tf));
   document.querySelectorAll("#range button").forEach(b=>b.setAttribute("aria-pressed", +b.dataset.v===state.range));
-  renderThb(); renderShops(); renderPositions(); renderSignals(); renderChips(); renderChart();
+  renderThb(); renderShops(); renderPositions(); renderSignals(); renderChips(); renderChart(); renderForecast();
 }
 $("tf").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.tf=v; render(); } };
 $("range").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.range=+v; render(); } };
