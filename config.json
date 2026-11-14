@@ -1,0 +1,13 @@
+{
+  "currencies": ["USD", "EUR", "JPY", "CNY", "GBP", "SGD"],
+  "quote_multiplier": { "JPY": 100, "KRW": 1000 },
+
+  "big_move_pct": 1.0,
+  "ma_weeks": [10, 20],
+
+  "targets": {
+    "USD": { "below": 33.00, "above": 34.50 },
+    "EUR": { "below": 37.00, "above": 39.00 },
+    "JPY": { "below": 20.50, "above": 22.50 }
+  }
+}

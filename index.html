@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ค่าเงินบาทรายสัปดาห์</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Mobile-first Telegram Mini App: signal list, currency chips, one big weekly chart. Colors follow Telegram's theme when available. */
+:root{
+  --bg:var(--tg-theme-bg-color,#ffffff);
+  --panel:var(--tg-theme-secondary-bg-color,#f2f4f3);
+  --fg:var(--tg-theme-text-color,#17201c);
+  --muted:var(--tg-theme-hint-color,#6b7772);
+  --accent:var(--tg-theme-button-color,#1f5f8b);
+  --accent-fg:var(--tg-theme-button-text-color,#ffffff);
+  --line:color-mix(in srgb,var(--muted) 25%,transparent);
+  --up:#0f8a5f; --down:#c4413a; --ma2:#c08a1e;
+  --sans:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:var(--tg-theme-bg-color,#121815); --panel:var(--tg-theme-secondary-bg-color,#1a221f);
+  --fg:var(--tg-theme-text-color,#e6ece9); --muted:var(--tg-theme-hint-color,#93a19b);
+  --accent:var(--tg-theme-button-color,#5aa3d6); --up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; color-scheme:dark}}
+html.tg-dark{--up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.45}
+.wrap{max-width:720px;margin:0 auto;padding-block:12px 28px;
+  padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));
+  display:grid;gap:14px}
+h1{margin:0;font-size:1.15rem;font-weight:600}
+.sub{color:var(--muted);font-size:.78rem}
+.signals{background:var(--panel);border-radius:12px;padding:10px 12px;display:grid;gap:6px}
+.signals h2{margin:0;font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.sig{font-size:.88rem;display:flex;gap:8px;align-items:baseline}
+.tag{font-size:.68rem;font-weight:600;padding:1px 7px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.tag.move{background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)}
+.tag.ma{background:color-mix(in srgb,var(--ma2) 20%,transparent);color:var(--ma2)}
+.none{color:var(--muted);font-size:.85rem}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chip{flex:0 0 auto;border:0;background:var(--panel);color:var(--fg);border-radius:10px;padding:7px 10px;text-align:left;font:inherit;cursor:pointer;display:grid;gap:0;min-width:96px}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.chip .c{font-weight:600;font-size:.82rem}
+.chip .p{font-family:var(--mono);font-size:.95rem;font-variant-numeric:tabular-nums}
+.chip .d{font-family:var(--mono);font-size:.72rem}
+.chip[aria-pressed="true"] .d{color:inherit!important;opacity:.9}
+.up{color:var(--up)} .down{color:var(--down)}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;flex-wrap:wrap}
+.pair{font-size:1.05rem;font-weight:600}
+.ohlc{font-family:var(--mono);font-size:.74rem;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.ohlc b{color:var(--fg);font-weight:500}
+.seg{display:flex;background:var(--panel);border-radius:9px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);padding:6px 8px;border-radius:7px;font:inherit;font-size:.8rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--bg);color:var(--fg);font-weight:600}
+.controls{display:grid;grid-template-columns:1fr 1.4fr;gap:8px}
+#chart{height:min(58vh,440px);width:100%}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.72rem;color:var(--muted)}
+.sw{display:inline-block;width:12px;height:3px;vertical-align:middle;margin-right:4px;border-radius:2px}
+.note{font-size:.72rem;color:var(--muted)}
+.err{color:var(--down);font-size:.85rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <h1>ค่าเงินบาทรายสัปดาห์</h1>
+    <div class="sub" id="status">กำลังโหลด…</div>
+  </div>
+
+  <section class="signals" aria-label="สัญญาณสัปดาห์ล่าสุด">
+    <h2>สัญญาณสัปดาห์ล่าสุด</h2>
+    <div id="signals"><span class="none">กำลังคำนวณ…</span></div>
+  </section>
+
+  <div class="chips" id="chips" role="group" aria-label="เลือกสกุลเงิน"></div>
+
+  <div class="head">
+    <div>
+      <div class="pair" id="pair"></div>
+      <div class="ohlc" id="ohlc"></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="seg" id="tf"><button type="button" data-v="D">วัน</button><button type="button" data-v="W">สัปดาห์</button><button type="button" data-v="M">เดือน</button></div>
+    <div class="seg" id="range"><button type="button" data-v="3">3ด</button><button type="button" data-v="6">6ด</button><button type="button" data-v="12">1ปี</button><button type="button" data-v="36">3ปี</button><button type="button" data-v="60">5ปี</button></div>
+  </div>
+  <div id="chart"></div>
+  <div class="legend">
+    <span><span class="sw" style="background:var(--accent)"></span>MA10</span>
+    <span><span class="sw" style="background:var(--ma2)"></span>MA20</span>
+    <span><span class="sw" style="background:var(--muted)"></span>ราคาเป้า</span>
+    <span>แท่งเขียว = บาทอ่อน · แดง = บาทแข็ง</span>
+  </div>
+  <p class="note">บาทต่อหน่วยเงินต่างประเทศ (เยนต่อ 100) · อัตราอ้างอิง ECB ผ่าน Frankfurter วันทำการละ 1 ค่า ไม่ใช่อัตราซื้อขายของธนาคาร · แท่งสัปดาห์/เดือน: เปิด = ปิดของแท่งก่อน</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); if (tg.colorScheme === "dark") document.documentElement.classList.add("tg-dark"); }
+
+const API = "https://api.frankfurter.dev/v1";
+const NAMES = {USD:"ดอลลาร์สหรัฐ",EUR:"ยูโร",JPY:"เยน",CNY:"หยวน",GBP:"ปอนด์",SGD:"ดอลลาร์สิงคโปร์",HKD:"ดอลลาร์ฮ่องกง",KRW:"วอน",AUD:"ดอลลาร์ออสเตรเลีย",CHF:"ฟรังก์สวิส"};
+// ค่าเริ่มต้น ถ้าโหลด config.json ไม่ได้ (ไฟล์เดียวกับ fx_alert_config.json)
+let CFG = {currencies:["USD","EUR","JPY","CNY","GBP","SGD"], quote_multiplier:{JPY:100,KRW:1000}, big_move_pct:1.0, ma_weeks:[10,20], targets:{}};
+
+const params = new URLSearchParams(location.search);
+const startParam = (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || params.get("ccy") || "";
+const state = {sel: startParam.toUpperCase() || "USD", tf:"W", range:6, daily:null};
+
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const prec = c => c === "KRW" ? 2 : 3;
+const fmt = (v,c) => v.toLocaleString("th-TH",{minimumFractionDigits:prec(c),maximumFractionDigits:prec(c)});
+const mult = c => (CFG.quote_multiplier||{})[c] || 1;
+
+function toCandles(series, tf){
+  if (tf === "D") return series.map(([d,v],i)=>{ const o=i?series[i-1][1]:v; return {time:d,open:o,close:v,high:Math.max(o,v),low:Math.min(o,v)}; });
+  const g = new Map();
+  for (const [d,v] of series){
+    const dt = new Date(d+"T00:00:00Z"); let key;
+    if (tf === "W"){ dt.setUTCDate(dt.getUTCDate()-((dt.getUTCDay()+6)%7)); key = dt.toISOString().slice(0,10); }
+    else key = d.slice(0,7)+"-01";
+    if (!g.has(key)) g.set(key,{time:key,open:v,high:v,low:v,close:v,last:d});
+    const k = g.get(key); k.high=Math.max(k.high,v); k.low=Math.min(k.low,v); k.close=v; k.last=d;
+  }
+  const out = [...g.values()];
+  for (let i=1;i<out.length;i++){ const o=out[i-1].close; out[i].open=o; out[i].high=Math.max(out[i].high,o); out[i].low=Math.min(out[i].low,o); }
+  return out;
+}
+// weekly candles that have closed (skip the running week before Saturday)
+function closedWeeks(series){
+  const w = toCandles(series,"W"); const now = new Date();
+  const day = now.getDay(); // 0 Sun .. 6 Sat
+  const monday = new Date(now); monday.setDate(now.getDate()-((day+6)%7));
+  const mIso = monday.toISOString().slice(0,10);
+  if (day !== 6 && day !== 0 && w.length && w.at(-1).time >= mIso) w.pop();
+  return w;
+}
+const sma = (arr,n,i) => i>=n-1 ? arr.slice(i-n+1,i+1).reduce((a,b)=>a+b,0)/n : null;
+
+function signals(){
+  const out = [];
+  for (const c of CFG.currencies){
+    const w = closedWeeks(state.daily[c]||[]); if (w.length < 2) continue;
+    const cur = w.at(-1), prev = w.at(-2), closes = w.map(x=>x.close), i = closes.length-1;
+    const chg = (cur.close-prev.close)/prev.close*100;
+    if (Math.abs(chg) >= CFG.big_move_pct) out.push({c, t:"move", txt:`${c}/THB ${chg>0?"+":""}${chg.toFixed(2)}% ในสัปดาห์เดียว`});
+    for (const n of CFG.ma_weeks){
+      const a = sma(closes,n,i), b = sma(closes,n,i-1); if (a==null||b==null) continue;
+      if ((prev.close>=b) !== (cur.close>=a)) out.push({c, t:"ma", txt:`${c}/THB ปิด${cur.close>=a?"ขึ้นเหนือ":"ลงใต้"} MA${n} (${fmt(a,c)})`});
+    }
+    const t = (CFG.targets||{})[c] || {};
+    if (t.below!=null && cur.low<=t.below) out.push({c, t:"target", txt:`${c}/THB แตะเป้าล่าง ${fmt(t.below,c)}`});
+    if (t.above!=null && cur.high>=t.above) out.push({c, t:"target", txt:`${c}/THB แตะเป้าบน ${fmt(t.above,c)}`});
+  }
+  return out;
+}
+
+async function load(){
+  try{ const r = await fetch("config.json",{cache:"no-store"}); if (r.ok) CFG = Object.assign(CFG, await r.json()); }catch(e){}
+  if (!CFG.currencies.includes(state.sel)) state.sel = CFG.currencies[0];
+  try{
+    const start = new Date(); start.setDate(start.getDate()-5*366-40);
+    const r = await fetch(`${API}/${start.toISOString().slice(0,10)}..?base=THB&symbols=${CFG.currencies.join(",")}`);
+    if (!r.ok) throw new Error("HTTP "+r.status);
+    const j = await r.json(); const daily = {}; CFG.currencies.forEach(c=>daily[c]=[]);
+    Object.keys(j.rates).sort().forEach(d=>{ const row=j.rates[d]; CFG.currencies.forEach(c=>{ if(row[c]) daily[c].push([d, mult(c)/row[c]]); }); });
+    state.daily = daily;
+    const last = daily[CFG.currencies[0]].at(-1)[0];
+    $("status").textContent = `ข้อมูลถึง ${new Date(last).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric"})}`;
+    render();
+  }catch(err){
+    $("status").innerHTML = `<span class="err">ดึงข้อมูลไม่สำเร็จ (${err.message}) ลองปิดแล้วเปิดใหม่</span>`;
+  }
+}
+
+function renderSignals(){
+  const s = signals(), box = $("signals");
+  const label = {move:"แรง", ma:"MA", target:"เป้า"};
+  box.innerHTML = s.length ? "" : `<span class="none">ไม่มีสัญญาณพิเศษ</span>`;
+  s.forEach(x=>{
+    const el = document.createElement("div"); el.className="sig";
+    el.innerHTML = `<span class="tag ${x.t}">${label[x.t]}</span><span>${x.txt}</span>`;
+    el.style.cursor="pointer"; el.onclick=()=>select(x.c);
+    box.appendChild(el);
+  });
+}
+function renderChips(){
+  const box = $("chips"); box.innerHTML = "";
+  CFG.currencies.forEach(c=>{
+    const w = closedWeeks(state.daily[c]||[]); if (w.length<2) return;
+    const v = w.at(-1).close, ch = (v-w.at(-2).close)/w.at(-2).close*100;
+    const b = document.createElement("button"); b.type="button"; b.className="chip"; b.setAttribute("aria-pressed", c===state.sel);
+    b.innerHTML = `<span class="c">${c}${mult(c)>1?" ×"+mult(c):""}</span><span class="p">${fmt(v,c)}</span><span class="d ${ch>=0?"up":"down"}">${ch>=0?"▲":"▼"} ${Math.abs(ch).toFixed(2)}% สัปดาห์</span>`;
+    b.onclick = ()=>select(c);
+    box.appendChild(b);
+  });
+}
+function select(c){ state.sel=c; if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged(); render(); }
+
+let chart, cs, ma1, ma2, plines = [], lastK = null;
+function buildChart(){
+  if (chart) chart.remove();
+  chart = LightweightCharts.createChart($("chart"),{
+    autoSize:true,
+    layout:{background:{type:"solid",color:css("--bg")}, textColor:css("--muted"), fontFamily:css("--mono"), fontSize:10},
+    grid:{vertLines:{visible:false}, horzLines:{color:css("--line")}},
+    rightPriceScale:{borderVisible:false}, timeScale:{borderVisible:false},
+    localization:{locale:"th-TH"}, crosshair:{mode:0},
+    handleScale:{axisPressedMouseMove:false},
+  });
+  cs = chart.addCandlestickSeries({upColor:css("--up"),downColor:css("--down"),borderVisible:false,wickUpColor:css("--up"),wickDownColor:css("--down")});
+  ma1 = chart.addLineSeries({color:css("--accent"),lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+  ma2 = chart.addLineSeries({color:css("--ma2"),lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+  chart.subscribeCrosshairMove(p=>{ const d = p && p.time ? p.seriesData.get(cs) : null; showOhlc(d||lastK); });
+}
+function showOhlc(k){
+  const c = state.sel; if (!k){ $("ohlc").textContent=""; return; }
+  $("ohlc").innerHTML = `<span>${k.time}</span><span>O <b>${fmt(k.open,c)}</b></span><span>H <b>${fmt(k.high,c)}</b></span><span>L <b>${fmt(k.low,c)}</b></span><span>C <b>${fmt(k.close,c)}</b></span>`;
+}
+function renderChart(){
+  const c = state.sel;
+  $("pair").textContent = `${c}/THB · ${mult(c)>1?"บาทต่อ "+mult(c).toLocaleString()+" ":"บาทต่อ 1 "}${NAMES[c]||""}`;
+  const all = toCandles(state.daily[c], state.tf), closes = all.map(k=>k.close);
+  const cut = new Date(); cut.setMonth(cut.getMonth()-state.range); const cutIso = cut.toISOString().slice(0,10);
+  const [n1,n2] = CFG.ma_weeks;
+  const line = n => all.map((k,i)=>({time:k.time,value:sma(closes,n,i)})).filter(x=>x.value!=null && x.time>=cutIso);
+  const data = all.filter(k=>k.time>=cutIso).map(({time,open,high,low,close})=>({time,open,high,low,close}));
+  cs.applyOptions({priceFormat:{type:"price",precision:prec(c),minMove:Math.pow(10,-prec(c))}});
+  cs.setData(data); ma1.setData(n1?line(n1):[]); ma2.setData(n2?line(n2):[]);
+  plines.forEach(p=>cs.removePriceLine(p)); plines = [];
+  const t = (CFG.targets||{})[c] || {};
+  [["below","เป้าล่าง"],["above","เป้าบน"]].forEach(([k,lab])=>{
+    if (t[k]!=null) plines.push(cs.createPriceLine({price:t[k],color:css("--muted"),lineWidth:1,lineStyle:2,axisLabelVisible:true,title:lab}));
+  });
+  chart.timeScale().fitContent();
+  lastK = data.at(-1); showOhlc(lastK);
+}
+function render(){
+  if (!state.daily) return;
+  document.querySelectorAll("#tf button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===state.tf));
+  document.querySelectorAll("#range button").forEach(b=>b.setAttribute("aria-pressed", +b.dataset.v===state.range));
+  renderSignals(); renderChips(); renderChart();
+}
+$("tf").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.tf=v; render(); } };
+$("range").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.range=+v; render(); } };
+if (tg) tg.onEvent("themeChanged", ()=>{ document.documentElement.classList.toggle("tg-dark", tg.colorScheme==="dark"); buildChart(); render(); });
+
+buildChart();
+load();
+</script>
+</body>
+</html>
