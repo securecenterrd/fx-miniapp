@@ -344,9 +344,16 @@ function savePositions(){
 }
 // ส่งรายการทั้งหมดให้บอท (ใช้ได้เมื่อเปิดจากปุ่มใต้ช่องพิมพ์ในแชตบอท)
 function canSend(){ return !!(tg && tg.platform && tg.platform !== "unknown" && !(tg.initDataUnsafe && tg.initDataUnsafe.query_id)); }
+let sendErr = "";
+function launchInfo(){
+  if (!tg || !tg.platform || tg.platform === "unknown") return "เปิดในเบราว์เซอร์ ไม่ใช่ใน Telegram";
+  const q = tg.initDataUnsafe && tg.initDataUnsafe.query_id;
+  return `${q ? "เปิดจากปุ่มเมนูหรือปุ่มในข้อความ" : "เปิดจากปุ่มใต้ช่องพิมพ์"} · ${tg.platform} v${tg.version}${sendErr ? " · " + sendErr : ""}`;
+}
 function syncBot(){
+  sendErr = "";
   if (!canSend()) return false;
-  try{ tg.sendData(JSON.stringify({v:1,positions})); return true; }catch(e){ return false; }
+  try{ tg.sendData(JSON.stringify({v:1,positions})); return true; }catch(e){ sendErr = String(e && e.message || e); return false; }
 }
 const units = p => p.thb*mult(p.ccy)/p.rate;
 const valueAt = (p,r) => units(p)*r/mult(p.ccy)*(1-(p.spread||0)/100);
@@ -430,7 +437,9 @@ function commit(msg){
   const sent = syncBot();
   const t = $("toast"); t.hidden = false;
   t.textContent = msg + (sent ? " · ส่งให้บอทแล้ว บอทจะแจ้งเตือนเมื่อถึงเรทที่ตั้ง" :
-    " · บันทึกในแอปแล้ว (ให้บอทแจ้งเตือนได้: เปิดแอปจากปุ่ม “📊 กราฟ / ตั้งราคาซื้อ” ใต้ช่องพิมพ์ในแชตบอท แล้วกดบันทึกอีกครั้ง)");
+    " · บันทึกในแอปแล้ว แต่ยังไม่ได้ส่งให้บอท ให้เปิดแอปจากปุ่ม “📊 กราฟ / ตั้งราคาซื้อ” ใต้ช่องพิมพ์ในแชตบอท แล้วกดแก้ไข → บันทึกอีกครั้ง") +
+    `\n[${launchInfo()}]`;
+  t.style.whiteSpace = "pre-line";
 }
 ["Tp","Sl"].forEach(k=>{ $(`f${k}Rate`).addEventListener("input",()=>{syncFromRate(k);preview();});
                        $(`f${k}Thb`).addEventListener("input",()=>{syncFromThb(k);preview();}); });
@@ -573,6 +582,10 @@ document.addEventListener("keydown", e=>{ if (e.key === "Escape" && !$("help").h
 
 buildChart();
 loadPositions().then(p=>{ positions = p; load(); });
+if (tg && tg.platform && tg.platform !== "unknown" && !canSend()){
+  const t = $("toast"); t.hidden = false; t.style.whiteSpace = "pre-line"; t.style.color = "var(--muted)";
+  t.textContent = "ดูกราฟได้ แต่ราคาซื้อที่บันทึกจากหน้านี้จะไม่ถึงบอท ถ้าจะให้บอทแจ้งเตือน ให้ปิดแล้วเปิดจากปุ่ม “📊 กราฟ / ตั้งราคาซื้อ” ใต้ช่องพิมพ์ (แตะไอคอนคีย์บอร์ด ⌨️ ถ้าไม่เห็นปุ่ม)\n[" + launchInfo() + "]";
+}
 </script>
 </body>
 </html>
