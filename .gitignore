@@ -1,0 +1,3 @@
+*.env
+fx_private.json
+fx_state.json
