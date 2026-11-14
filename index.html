@@ -26,6 +26,7 @@
   --accent:var(--tg-theme-button-color,#5aa3d6); --up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; color-scheme:dark}}
 html.tg-dark{--up:#3cc48f; --down:#ef6a61; --ma2:#e0aa45; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.45}
 .wrap{max-width:720px;margin:0 auto;padding-block:12px 28px;
   padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));
@@ -61,6 +62,35 @@ h1{margin:0;font-size:1.15rem;font-weight:600}
 .note{font-size:.72rem;color:var(--muted)}
 .err{color:var(--down);font-size:.85rem}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card{background:var(--panel);border-radius:12px;padding:12px;display:grid;gap:8px}
+.card h2{margin:0;font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;display:flex;justify-content:space-between;align-items:center}
+.thb-verdict{font-size:1.1rem;font-weight:600}
+.meter{position:relative;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--down),color-mix(in srgb,var(--muted) 30%,transparent) 50%,var(--up))}
+.meter i{position:absolute;top:-4px;width:4px;height:18px;border-radius:2px;background:var(--fg);transform:translateX(-50%)}
+.meter-l{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:.75rem;color:var(--muted)}
+.facts b{display:block;font-family:var(--mono);font-size:.9rem;color:var(--fg);font-weight:500}
+.btn{border:0;border-radius:9px;padding:9px 12px;font:inherit;font-size:.88rem;cursor:pointer;background:var(--accent);color:var(--accent-fg)}
+.btn.ghost{background:transparent;color:var(--accent);padding:4px 6px;font-size:.8rem}
+.btn.danger{background:transparent;color:var(--down);padding:4px 6px;font-size:.8rem}
+.pos{border-top:1px solid var(--line);padding-top:8px;display:grid;gap:4px}
+.pos:first-of-type{border-top:0;padding-top:0}
+.pos-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.pos-pl{font-family:var(--mono);font-size:1.05rem;font-weight:500}
+.pos-sub{font-size:.78rem;color:var(--muted)}
+.pos-sub b{color:var(--fg);font-weight:500;font-family:var(--mono)}
+.hit{font-size:.8rem;font-weight:600;padding:4px 8px;border-radius:8px}
+.hit.tp{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up)}
+.hit.sl{background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)}
+form{display:grid;gap:10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label{display:grid;gap:3px;font-size:.75rem;color:var(--muted)}
+input,select{font:inherit;font-size:.95rem;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);width:100%;min-width:0;font-family:var(--mono)}
+select{font-family:var(--sans)}
+.preview{font-size:.85rem;background:var(--bg);border-radius:8px;padding:8px 10px;display:grid;gap:2px}
+.preview b{font-family:var(--mono);font-weight:500}
+.disclaimer{font-size:.7rem;color:var(--muted)}
+.toast{font-size:.8rem;color:var(--up)}
 </style>
 </head>
 <body>
@@ -69,6 +99,50 @@ h1{margin:0;font-size:1.15rem;font-weight:600}
     <h1>ค่าเงินบาทรายสัปดาห์</h1>
     <div class="sub" id="status">กำลังโหลด…</div>
   </div>
+
+  <section class="card" aria-label="เงินบาทแข็งหรืออ่อน">
+    <h2>เงินบาทตอนนี้</h2>
+    <div class="thb-verdict" id="thbVerdict">–</div>
+    <div class="meter" aria-hidden="true"><i id="thbNeedle" style="left:50%"></i></div>
+    <div class="meter-l"><span>อ่อนกว่าปกติ</span><span>ค่าเฉลี่ย 20 สัปดาห์</span><span>แข็งกว่าปกติ</span></div>
+    <div class="facts">
+      <div>สัปดาห์นี้<b id="thb1w">–</b></div>
+      <div>4 สัปดาห์<b id="thb4w">–</b></div>
+      <div>เทียบค่าเฉลี่ย<b id="thbMa">–</b></div>
+    </div>
+    <div class="disclaimer" id="thbHint">บาทแข็ง = ใช้บาทน้อยลงในการซื้อเงินต่างประเทศ (ซื้อถูกลง) · บาทอ่อน = เงินต่างประเทศที่ถืออยู่มีค่าเป็นบาทมากขึ้น · คำนวณจากตะกร้าสกุลเงินที่ตั้งไว้ ถ่วงน้ำหนักเท่ากัน</div>
+  </section>
+
+  <section class="card" aria-label="รายการซื้อของฉัน">
+    <h2>รายการซื้อของฉัน <button class="btn ghost" type="button" id="addBtn">+ ตั้งราคาซื้อ</button></h2>
+    <div id="positions"><span class="none">ยังไม่มีรายการ กด “+ ตั้งราคาซื้อ” เพื่อบันทึกเรทที่จะซื้อสัปดาห์นี้</span></div>
+    <form id="posForm" hidden>
+      <div class="row2">
+        <label for="fCcy">สกุลเงิน<select id="fCcy"></select></label>
+        <label for="fDate">วันที่ซื้อ<input id="fDate" type="date"></label>
+      </div>
+      <div class="row2">
+        <label for="fRate"><span id="fRateLab">เรทที่ซื้อ (บาท)</span><input id="fRate" type="number" step="0.001" inputmode="decimal" required></label>
+        <label for="fThb">ใช้เงิน (บาท)<input id="fThb" type="number" step="1" inputmode="numeric" required></label>
+      </div>
+      <div class="row2">
+        <label for="fTpRate">ขายเมื่อเรทถึง<input id="fTpRate" type="number" step="0.001" inputmode="decimal"></label>
+        <label for="fTpThb">= กำไร (บาท)<input id="fTpThb" type="number" step="1" inputmode="numeric"></label>
+      </div>
+      <div class="row2">
+        <label for="fSlRate">ตัดขาดทุนเมื่อเรทลงถึง<input id="fSlRate" type="number" step="0.001" inputmode="decimal"></label>
+        <label for="fSlThb">= ขาดทุน (บาท)<input id="fSlThb" type="number" step="1" inputmode="numeric"></label>
+      </div>
+      <label for="fSpread">ส่วนต่างเรทซื้อ-ขายของร้านแลกเงิน (%) — ใส่ 0 ถ้าไม่ต้องการหัก<input id="fSpread" type="number" step="0.01" inputmode="decimal" value="0.5"></label>
+      <div class="preview" id="fPreview"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn ghost" type="button" id="fCancel">ยกเลิก</button>
+        <button class="btn" type="submit">บันทึก</button>
+      </div>
+      <div class="disclaimer">แอปไม่ได้แนะนำให้ซื้อหรือขาย จะแจ้งเตือนตามเรทที่คุณตั้งเองเท่านั้น · เรทในแอปเป็นอัตราอ้างอิง ECB เช็คเรทจริงที่ร้านแลกเงินก่อนซื้อขาย</div>
+    </form>
+    <div class="toast" id="toast" hidden></div>
+  </section>
 
   <section class="signals" aria-label="สัญญาณสัปดาห์ล่าสุด">
     <h2>สัญญาณสัปดาห์ล่าสุด</h2>
@@ -141,6 +215,148 @@ function closedWeeks(series){
   return w;
 }
 const sma = (arr,n,i) => i>=n-1 ? arr.slice(i-n+1,i+1).reduce((a,b)=>a+b,0)/n : null;
+
+// ---------- ดัชนีเงินบาท (ตะกร้าเท่ากัน, สูงขึ้น = บาทแข็ง) ----------
+function bahtIndex(){
+  const ws = CFG.currencies.map(c=>closedWeeks(state.daily[c]||[])).filter(w=>w.length);
+  const n = Math.min(...ws.map(w=>w.length)); if (!isFinite(n) || n < 2) return null;
+  const al = ws.map(w=>w.slice(-n));
+  const idx = []; for (let i=0;i<n;i++){ let s=0; al.forEach(w=>s+=Math.log(w[0].close/w[i].close)); idx.push(100*Math.exp(s/al.length)); }
+  const last = idx[n-1], pct = (a,b)=>(a/b-1)*100;
+  const maN = Math.min(20,n), ma = idx.slice(-maN).reduce((a,b)=>a+b,0)/maN;
+  return {w1:pct(last,idx[n-2]), w4:n>4?pct(last,idx[n-5]):null, vsMa:pct(last,ma)};
+}
+function renderThb(){
+  const b = bahtIndex(); if (!b) return;
+  const word = v => v>0.15?"แข็งค่าขึ้น":v<-0.15?"อ่อนค่าลง":"ทรงตัว";
+  const sgn = v => v==null?"–":(v>0?"+":"")+v.toFixed(2)+"%";
+  const lvl = b.vsMa>1?"แข็งกว่าปกติ":b.vsMa<-1?"อ่อนกว่าปกติ":"ใกล้ระดับปกติ";
+  $("thbVerdict").innerHTML = `บาท<span class="${b.w1>=0?"up":"down"}">${word(b.w1)}</span>สัปดาห์นี้ · ${lvl}`;
+  $("thb1w").textContent = sgn(b.w1); $("thb4w").textContent = sgn(b.w4); $("thbMa").textContent = sgn(b.vsMa);
+  $("thbNeedle").style.left = Math.max(2,Math.min(98,50+b.vsMa/3*50))+"%";
+}
+
+// ---------- รายการซื้อ ----------
+let positions = [];
+const KEY = "fx_positions";
+const hasCloud = !!(tg && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast("6.9"));
+function loadPositions(){
+  return new Promise(res=>{
+    const parse = s=>{ try{ const v=JSON.parse(s||"[]"); return Array.isArray(v)?v:[]; }catch(e){ return []; } };
+    if (hasCloud) tg.CloudStorage.getItem(KEY,(err,v)=>res(err?[]:parse(v)));
+    else { try{ res(parse(localStorage.getItem(KEY))); }catch(e){ res([]); } }
+  });
+}
+function savePositions(){
+  const s = JSON.stringify(positions);
+  if (hasCloud) tg.CloudStorage.setItem(KEY,s,()=>{});
+  try{ localStorage.setItem(KEY,s); }catch(e){}
+}
+// ส่งรายการทั้งหมดให้บอท (ใช้ได้เมื่อเปิดจากปุ่มใต้ช่องพิมพ์ในแชตบอท)
+function canSend(){ return !!(tg && tg.platform && tg.platform !== "unknown" && !(tg.initDataUnsafe && tg.initDataUnsafe.query_id)); }
+function syncBot(){
+  if (!canSend()) return false;
+  try{ tg.sendData(JSON.stringify({v:1,positions})); return true; }catch(e){ return false; }
+}
+const units = p => p.thb*mult(p.ccy)/p.rate;
+const valueAt = (p,r) => units(p)*r/mult(p.ccy)*(1-(p.spread||0)/100);
+const rateFor = (p,plThb) => (p.thb+plThb)*mult(p.ccy)/(units(p)*(1-(p.spread||0)/100));
+const baht = v => (v>=0?"+":"−")+Math.abs(Math.round(v)).toLocaleString("th-TH")+" บาท";
+const latest = c => { const s=state.daily&&state.daily[c]; return s&&s.length?s.at(-1)[1]:null; };
+
+function renderPositions(){
+  const box = $("positions");
+  if (!positions.length){ box.innerHTML = `<span class="none">ยังไม่มีรายการ กด “+ ตั้งราคาซื้อ” เพื่อบันทึกเรทที่จะซื้อสัปดาห์นี้</span>`; return; }
+  box.innerHTML = "";
+  positions.forEach((p,i)=>{
+    const r = latest(p.ccy); if (r==null) return;
+    const now = valueAt(p,r), pl = now-p.thb;
+    const u = units(p);
+    let status = "";
+    if (p.tp && r>=p.tp) status = `<div class="hit tp">🎯 ถึงเรทขายที่ตั้งไว้ ${fmt(p.tp,p.ccy)} · ขายตอนนี้ได้ประมาณ ${Math.round(now).toLocaleString("th-TH")} บาท (${baht(pl)})</div>`;
+    else if (p.sl && r<=p.sl) status = `<div class="hit sl">⚠️ ถึงจุดตัดขาดทุน ${fmt(p.sl,p.ccy)} · ขายตอนนี้ได้ประมาณ ${Math.round(now).toLocaleString("th-TH")} บาท (${baht(pl)})</div>`;
+    const el = document.createElement("div"); el.className = "pos";
+    el.innerHTML = `
+      <div class="pos-top"><span><b>${p.ccy}</b> · ${u.toLocaleString("th-TH",{maximumFractionDigits:2})} ${p.ccy} ซื้อ ${p.date||""}</span>
+        <span class="pos-pl ${pl>=0?"up":"down"}">${baht(pl)}</span></div>
+      <div class="pos-sub">ซื้อที่ <b>${fmt(p.rate,p.ccy)}</b> ใช้ <b>${p.thb.toLocaleString("th-TH")}</b> บาท · เรทล่าสุด <b>${fmt(r,p.ccy)}</b> → มูลค่า <b>${Math.round(now).toLocaleString("th-TH")}</b> บาท</div>
+      <div class="pos-sub">${p.tp?`ขายที่ <b>${fmt(p.tp,p.ccy)}</b> = ${baht(valueAt(p,p.tp)-p.thb)} ${r>=p.tp?" ✅ ถึงแล้ว":` (อีก ${((p.tp/r-1)*100).toFixed(2)}%)`}`:"ยังไม่ตั้งเรทขาย"}${p.sl?` · ตัดขาดทุน <b>${fmt(p.sl,p.ccy)}</b> = ${baht(valueAt(p,p.sl)-p.thb)}`:""}</div>
+      ${status}
+      <div style="display:flex;gap:4px;justify-content:flex-end">
+        <button class="btn ghost" type="button" data-act="chart">ดูกราฟ</button>
+        <button class="btn ghost" type="button" data-act="edit">แก้ไข</button>
+        <button class="btn danger" type="button" data-act="del">ขายแล้ว / ลบ</button>
+      </div>`;
+    el.querySelector('[data-act="chart"]').onclick = ()=>select(p.ccy);
+    el.querySelector('[data-act="edit"]').onclick = ()=>openForm(i);
+    el.querySelector('[data-act="del"]').onclick = (e)=>{
+      const b = e.currentTarget;
+      if (b.dataset.armed){ positions.splice(i,1); commit("ลบรายการแล้ว"); }
+      else { b.dataset.armed = "1"; b.textContent = "กดอีกครั้งเพื่อยืนยัน"; }
+    };
+    box.appendChild(el);
+  });
+}
+
+let editing = -1;
+function openForm(i){
+  editing = i;
+  const f = $("posForm"), p = i>=0 ? positions[i] : null;
+  $("fCcy").innerHTML = CFG.currencies.map(c=>`<option value="${c}">${c}${mult(c)>1?" (ต่อ "+mult(c)+")":""} ${NAMES[c]||""}</option>`).join("");
+  $("fCcy").value = p ? p.ccy : state.sel;
+  $("fDate").value = p ? p.date : new Date().toISOString().slice(0,10);
+  $("fRate").value = p ? p.rate : (latest($("fCcy").value)||0).toFixed(3);
+  $("fThb").value = p ? p.thb : 10000;
+  $("fSpread").value = p ? (p.spread||0) : 0.5;
+  $("fTpRate").value = p && p.tp ? p.tp : ""; $("fSlRate").value = p && p.sl ? p.sl : "";
+  $("fTpThb").value = ""; $("fSlThb").value = "";
+  f.hidden = false; $("addBtn").hidden = true;
+  syncFromRate("Tp"); syncFromRate("Sl"); preview();
+  f.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function closeForm(){ $("posForm").hidden = true; $("addBtn").hidden = false; editing = -1; }
+function draft(){
+  return {ccy:$("fCcy").value, date:$("fDate").value, rate:+$("fRate").value, thb:+$("fThb").value,
+          spread:+$("fSpread").value||0, tp:+$("fTpRate").value||null, sl:+$("fSlRate").value||null};
+}
+function syncFromRate(k){ const p=draft(), r=+$(`f${k}Rate`).value; if(!(p.rate>0&&p.thb>0)) return;
+  $(`f${k}Thb`).value = r>0 ? Math.round(Math.abs(valueAt(p,r)-p.thb)) : ""; }
+function syncFromThb(k){ const p=draft(), v=+$(`f${k}Thb`).value; if(!(p.rate>0&&p.thb>0)) return;
+  $(`f${k}Rate`).value = v>0 ? rateFor(p, k==="Tp"?v:-v).toFixed(prec(p.ccy)) : ""; }
+function preview(){
+  const p = draft(), box = $("fPreview");
+  $("fRateLab").textContent = `เรทที่ซื้อ (บาทต่อ ${mult(p.ccy)>1?mult(p.ccy)+" ":"1 "}${p.ccy})`;
+  if (!(p.rate>0 && p.thb>0)){ box.textContent = "ใส่เรทที่ซื้อและจำนวนเงินบาท"; return; }
+  const r = latest(p.ccy);
+  const lines = [`จะได้ <b>${units(p).toLocaleString("th-TH",{maximumFractionDigits:2})} ${p.ccy}</b>`];
+  if (r) lines.push(`ถ้าขายที่เรทล่าสุด ${fmt(r,p.ccy)} ได้ <b>${Math.round(valueAt(p,r)).toLocaleString("th-TH")}</b> บาท (${baht(valueAt(p,r)-p.thb)})`);
+  lines.push(`เรทขายที่ไม่ขาดทุน (หักส่วนต่างแล้ว) <b>${fmt(rateFor(p,0),p.ccy)}</b>`);
+  if (p.tp) lines.push(`ขายที่ ${fmt(p.tp,p.ccy)} → <b>${baht(valueAt(p,p.tp)-p.thb)}</b>`);
+  if (p.sl) lines.push(`ตัดขาดทุนที่ ${fmt(p.sl,p.ccy)} → <b>${baht(valueAt(p,p.sl)-p.thb)}</b>`);
+  box.innerHTML = lines.map(l=>`<div>${l}</div>`).join("");
+}
+function commit(msg){
+  savePositions(); render();
+  const sent = syncBot();
+  const t = $("toast"); t.hidden = false;
+  t.textContent = msg + (sent ? " · ส่งให้บอทแล้ว บอทจะแจ้งเตือนเมื่อถึงเรทที่ตั้ง" :
+    " · บันทึกในแอปแล้ว (ให้บอทแจ้งเตือนได้: เปิดแอปจากปุ่ม “📊 กราฟ / ตั้งราคาซื้อ” ใต้ช่องพิมพ์ในแชตบอท แล้วกดบันทึกอีกครั้ง)");
+}
+["Tp","Sl"].forEach(k=>{ $(`f${k}Rate`).addEventListener("input",()=>{syncFromRate(k);preview();});
+                       $(`f${k}Thb`).addEventListener("input",()=>{syncFromThb(k);preview();}); });
+["fRate","fThb","fSpread"].forEach(id=>$(id).addEventListener("input",()=>{syncFromRate("Tp");syncFromRate("Sl");preview();}));
+$("fCcy").addEventListener("change",()=>{ $("fRate").value=(latest($("fCcy").value)||0).toFixed(prec($("fCcy").value)); $("fTpRate").value=""; $("fSlRate").value=""; $("fTpThb").value=""; $("fSlThb").value=""; preview(); });
+$("addBtn").onclick = ()=>openForm(-1);
+$("fCancel").onclick = closeForm;
+$("posForm").addEventListener("submit", e=>{
+  e.preventDefault(); if ($("posForm").hidden) return; const p = draft();
+  if (!(p.rate>0 && p.thb>0)) return;
+  if (p.tp && p.tp<=p.rate) { $("fPreview").innerHTML = `<span class="err">เรทขายต้องสูงกว่าเรทที่ซื้อ</span>`; return; }
+  if (p.sl && p.sl>=p.rate) { $("fPreview").innerHTML = `<span class="err">เรทตัดขาดทุนต้องต่ำกว่าเรทที่ซื้อ</span>`; return; }
+  p.id = editing>=0 ? positions[editing].id : Date.now().toString(36);
+  if (editing>=0) positions[editing] = p; else positions.push(p);
+  closeForm(); commit("บันทึกแล้ว");
+});
 
 function signals(){
   const out = [];
@@ -237,6 +453,11 @@ function renderChart(){
   [["below","เป้าล่าง"],["above","เป้าบน"]].forEach(([k,lab])=>{
     if (t[k]!=null) plines.push(cs.createPriceLine({price:t[k],color:css("--muted"),lineWidth:1,lineStyle:2,axisLabelVisible:true,title:lab}));
   });
+  positions.filter(p=>p.ccy===c).forEach(p=>{
+    plines.push(cs.createPriceLine({price:p.rate,color:css("--accent"),lineWidth:1,lineStyle:0,axisLabelVisible:true,title:"ซื้อ"}));
+    if (p.tp) plines.push(cs.createPriceLine({price:p.tp,color:css("--up"),lineWidth:1,lineStyle:2,axisLabelVisible:true,title:"ขาย"}));
+    if (p.sl) plines.push(cs.createPriceLine({price:p.sl,color:css("--down"),lineWidth:1,lineStyle:2,axisLabelVisible:true,title:"ตัดขาดทุน"}));
+  });
   chart.timeScale().fitContent();
   lastK = data.at(-1); showOhlc(lastK);
 }
@@ -244,14 +465,14 @@ function render(){
   if (!state.daily) return;
   document.querySelectorAll("#tf button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===state.tf));
   document.querySelectorAll("#range button").forEach(b=>b.setAttribute("aria-pressed", +b.dataset.v===state.range));
-  renderSignals(); renderChips(); renderChart();
+  renderThb(); renderPositions(); renderSignals(); renderChips(); renderChart();
 }
 $("tf").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.tf=v; render(); } };
 $("range").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.range=+v; render(); } };
 if (tg) tg.onEvent("themeChanged", ()=>{ document.documentElement.classList.toggle("tg-dark", tg.colorScheme==="dark"); buildChart(); render(); });
 
 buildChart();
-load();
+loadPositions().then(p=>{ positions = p; load(); });
 </script>
 </body>
 </html>
