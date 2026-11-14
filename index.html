@@ -93,6 +93,17 @@ select{font-family:var(--sans)}
 .preview b{font-family:var(--mono);font-weight:500}
 .disclaimer{font-size:.7rem;color:var(--muted)}
 .toast{font-size:.8rem;color:var(--up)}
+.shop-tbl-wrap{overflow-x:auto}
+.shop-tbl{width:100%;border-collapse:collapse;font-size:.82rem;font-variant-numeric:tabular-nums}
+.shop-tbl th{font-weight:500;color:var(--muted);font-size:.72rem;text-align:right;padding:4px 6px}
+.shop-tbl th:first-child,.shop-tbl td:first-child{text-align:left}
+.shop-tbl td{padding:5px 6px;text-align:right;font-family:var(--mono);border-top:1px solid var(--line)}
+.shop-tbl td:first-child{font-family:var(--sans);font-weight:600}
+.shop-tbl b,.best-b{color:var(--up);font-weight:600}
+.verdict{font-size:.88rem;font-weight:600;padding:6px 8px;border-radius:8px}
+.verdict.ok{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up)}
+.verdict.no{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down)}
+.shop-line{font-size:.78rem;color:var(--muted);font-family:var(--mono)}
 .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .help-btn{flex:0 0 auto;border:0;background:var(--panel);color:var(--accent);border-radius:999px;padding:6px 12px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer}
 #help{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -130,6 +141,12 @@ select{font-family:var(--sans)}
     <div class="disclaimer" id="thbHint">บาทแข็ง = ใช้บาทน้อยลงในการซื้อเงินต่างประเทศ (ซื้อถูกลง) · บาทอ่อน = เงินต่างประเทศที่ถืออยู่มีค่าเป็นบาทมากขึ้น · คำนวณจากตะกร้าสกุลเงินที่ตั้งไว้ ถ่วงน้ำหนักเท่ากัน</div>
   </section>
 
+  <section class="card" aria-label="เรทร้านแลกเงิน" id="shopCard" hidden>
+    <h2>เรทร้านแลกเงิน <span id="shopAsOf" style="text-transform:none;letter-spacing:0"></span></h2>
+    <div class="shop-tbl-wrap"><table class="shop-tbl" id="shopTbl"></table></div>
+    <div class="disclaimer">รับซื้อ = ร้านซื้อคืนจากคุณ · ขาย = ร้านขายให้คุณ · เทียบธนบัตรใบใหญ่ (เช่น USD 100) · <b class="best-b">ตัวหนา</b> = ดีกว่าสำหรับคุณ · เรทเปลี่ยนได้ตลอดวัน โทรเช็คสาขาก่อนไป</div>
+  </section>
+
   <section class="card" aria-label="รายการซื้อของฉัน">
     <h2>รายการซื้อของฉัน <button class="btn ghost" type="button" id="addBtn">+ ตั้งราคาซื้อ</button></h2>
     <div id="positions"><span class="none">ยังไม่มีรายการ กด “+ ตั้งราคาซื้อ” เพื่อบันทึกเรทที่จะซื้อสัปดาห์นี้</span></div>
@@ -150,7 +167,10 @@ select{font-family:var(--sans)}
         <label for="fSlRate">ตัดขาดทุนเมื่อเรทลงถึง<input id="fSlRate" type="number" step="0.001" inputmode="decimal"></label>
         <label for="fSlThb">= ขาดทุน (บาท)<input id="fSlThb" type="number" step="1" inputmode="numeric"></label>
       </div>
-      <label for="fSpread">ส่วนต่างเรทซื้อ-ขายของร้านแลกเงิน (%) — ใส่ 0 ถ้าไม่ต้องการหัก<input id="fSpread" type="number" step="0.01" inputmode="decimal" value="0.5"></label>
+      <div class="row2">
+        <label for="fNote">ธนบัตรที่ถือ (ใบละ)<input id="fNote" type="number" step="1" inputmode="numeric"></label>
+        <label for="fSpread">ส่วนต่าง % (ใช้เมื่อไม่มีเรทร้าน)<input id="fSpread" type="number" step="0.01" inputmode="decimal" value="0.5"></label>
+      </div>
       <div class="preview" id="fPreview"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button class="btn ghost" type="button" id="fCancel">ยกเลิก</button>
@@ -226,8 +246,10 @@ select{font-family:var(--sans)}
     </details>
 
     <details>
-      <summary>ส่วนต่างของร้านแลกเงิน</summary>
-      <p>ร้านแลกเงินรับซื้อคืนถูกกว่าที่ขายให้คุณ แอปหักส่วนต่างนี้ตอนคำนวณเงินที่จะได้คืน ค่าเริ่มต้น 0.5% เป็นแค่ค่าตั้งต้น ควรแก้เป็นส่วนต่างจริงของร้านที่คุณใช้ ใส่ 0 ถ้าไม่ต้องการหัก</p>
+      <summary>เรทร้าน SuperRich 1965 / Linda และ “ขายคืนคุ้มไหม”</summary>
+      <p>แอปใช้เรท <b>รับซื้อ</b> (ร้านซื้อคืนจากคุณ) และ <b>ขาย</b> (ร้านขายให้คุณ) ของ SuperRich 1965 และ Linda Exchange ที่บอทดึงมาล่าสุด แต่ละรายการบอกว่าถ้าขายคืนตอนนี้ได้กำไรหรือขาดทุนกี่บาทที่แต่ละร้าน และร้านไหนให้มากกว่า ถ้ายังขาดทุนจะบอกเรทรับซื้อที่ต้องรอ</p>
+      <p>ร้านให้เรทต่างกันตามขนาดธนบัตร ใส่ “ธนบัตรที่ถือ” ให้ตรง (เช่น USD ใบ 100) แอปจะใช้แถวเรทของใบนั้น</p>
+      <p>ถ้าดึงเรทร้านไม่ได้ แอปกลับไปใช้อัตรา ECB หักส่วนต่าง: ร้านแลกเงินรับซื้อคืนถูกกว่าที่ขายให้คุณ แอปหักส่วนต่างนี้ตอนคำนวณเงินที่จะได้คืน ค่าเริ่มต้น 0.5% เป็นแค่ค่าตั้งต้น ควรแก้เป็นส่วนต่างจริงของร้านที่คุณใช้ ใส่ 0 ถ้าไม่ต้องการหัก</p>
     </details>
 
     <details>
@@ -336,7 +358,7 @@ function cleanPos(p){
   const n = (v,lo,hi)=>{ const x = Number(v); return (v===null||v===""||v===undefined||!isFinite(x)||x<=lo||x>=hi) ? null : x; };
   const rate = n(p.rate,0,1e6), thb = n(p.thb,0,1e10); if (rate==null || thb==null) return null;
   return {id:String(p.id||"").replace(/[^a-z0-9]/gi,"").slice(0,20), ccy:p.ccy, rate, thb,
-          spread:n(p.spread,-0.01,20)||0, tp:n(p.tp,0,1e6), sl:n(p.sl,0,1e6),
+          spread:n(p.spread,-0.01,20)||0, tp:n(p.tp,0,1e6), sl:n(p.sl,0,1e6), note:n(p.note,0,1e7),
           date:String(p.date||"").replace(/[^0-9-]/g,"").slice(0,10)};
 }
 const KEY = "fx_positions";
@@ -367,28 +389,90 @@ function syncBot(){
   try{ tg.sendData(JSON.stringify({v:1,positions})); return true; }catch(e){ sendErr = String(e && e.message || e); return false; }
 }
 const units = p => p.thb*mult(p.ccy)/p.rate;
-const valueAt = (p,r) => units(p)*r/mult(p.ccy)*(1-(p.spread||0)/100);
-const rateFor = (p,plThb) => (p.thb+plThb)*mult(p.ccy)/(units(p)*(1-(p.spread||0)/100));
+// มีเรทร้าน = ใช้เรทรับซื้อจริง ไม่ต้องหักส่วนต่าง · ไม่มี = ใช้ ECB หักส่วนต่างที่ตั้ง
+const effSpread = p => (typeof quotes === "function" && quotes(p.ccy, p.note).length) ? 0 : (p.spread||0);
+const valueAt = (p,r) => units(p)*r/mult(p.ccy)*(1-effSpread(p)/100);
+const rateFor = (p,plThb) => (p.thb+plThb)*mult(p.ccy)/(units(p)*(1-effSpread(p)/100));
 const baht = v => (v>=0?"+":"−")+Math.abs(Math.round(v)).toLocaleString("th-TH")+" บาท";
 const latest = c => { const s=state.daily&&state.daily[c]; return s&&s.length?s.at(-1)[1]:null; };
+
+// ---------- เรทร้านแลกเงิน (rates.json อัปเดตโดยบอท) ----------
+let SHOPS = null;
+const DEFAULT_NOTE = {USD:100,EUR:100,GBP:50,JPY:10000,CNY:100,SGD:100,HKD:1000,KRW:50000,AUD:100,CHF:100};
+const valueShop = (p,r) => units(p)*r/mult(p.ccy);
+function rowForNote(rows, note){
+  if (!rows || !rows.length) return null;
+  if (note) for (const r of rows){
+    const nums = (String(r.denom||"").match(/\d+/g)||[]).map(Number);
+    if (!nums.length || (note>=Math.min(...nums) && note<=Math.max(...nums))) return r;
+  }
+  return rows[0];
+}
+function quotes(ccy, note){
+  if (!SHOPS) return [];
+  note = note || DEFAULT_NOTE[ccy];
+  return Object.values(SHOPS.shops||{}).map(s=>{
+    const r = rowForNote((s.rates||{})[ccy], note);
+    return r && isFinite(r.buy) && isFinite(r.sell) ? [String(s.name), String(r.denom||""), +r.buy, +r.sell] : null;
+  }).filter(Boolean);
+}
+function sellback(p){
+  const qs = quotes(p.ccy, p.note);
+  if (qs.length){
+    const per = qs.map(([n,d,b])=>[n,d,b,valueShop(p,b)]);
+    const best = per.reduce((a,x)=>x[2]>a[2]?x:a);
+    return {rate:best[2], value:best[3], shop:best[0], per, source:"shop"};
+  }
+  const r = latest(p.ccy); if (r==null) return null;
+  return {rate:r, value:valueAt(p,r), shop:null, per:[], source:"ecb"};
+}
+const esc = s => String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function renderShops(){
+  if (!SHOPS) return;
+  const names = Object.values(SHOPS.shops||{}).filter(s=>s.rates && Object.keys(s.rates).length).map(s=>String(s.name));
+  if (!names.length) return;
+  const short = n => esc(n.split(" ")[0]);
+  let html = `<tr><th>สกุล</th>${names.map(n=>`<th colspan="2">${short(n)}<br>รับซื้อ / ขาย</th>`).join("")}</tr>`;
+  CFG.currencies.forEach(c=>{
+    const qs = quotes(c); if (!qs.length) return;
+    const hiBuy = Math.max(...qs.map(q=>q[2])), loSell = Math.min(...qs.map(q=>q[3]));
+    const cell = (v,best)=> best && qs.length>1 ? `<b>${fmt(v,c)}</b>` : fmt(v,c);
+    html += `<tr><td>${c}${mult(c)>1?` <small>×${mult(c)}</small>`:""}</td>` + names.map(n=>{
+      const q = qs.find(x=>x[0]===n);
+      return q ? `<td>${cell(q[2], q[2]===hiBuy && qs.some(x=>x[2]!==hiBuy))}</td><td>${cell(q[3], q[3]===loSell && qs.some(x=>x[3]!==loSell))}</td>` : `<td>–</td><td>–</td>`;
+    }).join("") + `</tr>`;
+  });
+  $("shopTbl").innerHTML = html;
+  const t = new Date(SHOPS.updated);
+  $("shopAsOf").textContent = isNaN(t) ? "" : `· ${t.toLocaleString("th-TH",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}`;
+  $("shopCard").hidden = false;
+}
 
 function renderPositions(){
   const box = $("positions");
   if (!positions.length){ box.innerHTML = `<span class="none">ยังไม่มีรายการ กด “+ ตั้งราคาซื้อ” เพื่อบันทึกเรทที่จะซื้อสัปดาห์นี้</span>`; return; }
   box.innerHTML = "";
   positions.forEach((p,i)=>{
-    const r = latest(p.ccy); if (r==null) return;
-    const now = valueAt(p,r), pl = now-p.thb;
-    const u = units(p);
+    const sb = sellback(p); if (!sb) return;
+    const r = sb.rate, now = sb.value, pl = now-p.thb;
+    const u = units(p), shopSrc = sb.source === "shop";
+    const val = x => shopSrc ? valueShop(p,x) : valueAt(p,x);
+    const be = shopSrc ? p.rate : p.rate/(1-(p.spread||0)/100);
+    const verdict = pl > 0
+      ? `<div class="verdict ok">✅ ขายคืนตอนนี้ได้กำไร ${baht(pl)}${sb.shop?` ที่ ${esc(sb.shop)}`:""}</div>`
+      : `<div class="verdict no">❌ ขายคืนตอนนี้ยังขาดทุน ${baht(pl)} · ต้องรอเรทรับซื้อ ≥ ${fmt(be,p.ccy)} (อีก ${((be/r-1)*100).toFixed(2)}%)</div>`;
+    const perShop = sb.per.map(([n,d,b,v])=>`<div class="shop-line">${esc(n)} รับซื้อ ${fmt(b,p.ccy)}${d?` (ใบ ${esc(d)})`:""} → ${Math.round(v).toLocaleString("th-TH")} บาท (${baht(v-p.thb)})</div>`).join("");
     let status = "";
-    if (p.tp && r>=p.tp) status = `<div class="hit tp">🎯 ถึงเรทขายที่ตั้งไว้ ${fmt(p.tp,p.ccy)} · ขายตอนนี้ได้ประมาณ ${Math.round(now).toLocaleString("th-TH")} บาท (${baht(pl)})</div>`;
-    else if (p.sl && r<=p.sl) status = `<div class="hit sl">⚠️ ถึงจุดตัดขาดทุน ${fmt(p.sl,p.ccy)} · ขายตอนนี้ได้ประมาณ ${Math.round(now).toLocaleString("th-TH")} บาท (${baht(pl)})</div>`;
+    if (p.tp && r>=p.tp) status = `<div class="hit tp">🎯 ถึงเรทขายที่ตั้งไว้ ${fmt(p.tp,p.ccy)}</div>`;
+    else if (p.sl && r<=p.sl) status = `<div class="hit sl">⚠️ ถึงจุดตัดขาดทุน ${fmt(p.sl,p.ccy)}</div>`;
     const el = document.createElement("div"); el.className = "pos";
     el.innerHTML = `
       <div class="pos-top"><span><b>${p.ccy}</b> · ${u.toLocaleString("th-TH",{maximumFractionDigits:2})} ${p.ccy} ซื้อ ${p.date||""}</span>
         <span class="pos-pl ${pl>=0?"up":"down"}">${baht(pl)}</span></div>
-      <div class="pos-sub">ซื้อที่ <b>${fmt(p.rate,p.ccy)}</b> ใช้ <b>${p.thb.toLocaleString("th-TH")}</b> บาท · เรทล่าสุด <b>${fmt(r,p.ccy)}</b> → มูลค่า <b>${Math.round(now).toLocaleString("th-TH")}</b> บาท</div>
-      <div class="pos-sub">${p.tp?`ขายที่ <b>${fmt(p.tp,p.ccy)}</b> = ${baht(valueAt(p,p.tp)-p.thb)} ${r>=p.tp?" ✅ ถึงแล้ว":` (อีก ${((p.tp/r-1)*100).toFixed(2)}%)`}`:"ยังไม่ตั้งเรทขาย"}${p.sl?` · ตัดขาดทุน <b>${fmt(p.sl,p.ccy)}</b> = ${baht(valueAt(p,p.sl)-p.thb)}`:""}</div>
+      <div class="pos-sub">ซื้อที่ <b>${fmt(p.rate,p.ccy)}</b> ใช้ <b>${p.thb.toLocaleString("th-TH")}</b> บาท${p.note?` · ธนบัตรใบละ ${p.note.toLocaleString("th-TH")}`:""}</div>
+      ${verdict}
+      ${perShop || `<div class="shop-line">ไม่มีเรทร้าน ใช้เรทอ้างอิง ECB ${fmt(r,p.ccy)} หักส่วนต่าง ${p.spread||0}%</div>`}
+      <div class="pos-sub">${p.tp?`ขายที่ <b>${fmt(p.tp,p.ccy)}</b> = ${baht(val(p.tp)-p.thb)} ${r>=p.tp?" ✅ ถึงแล้ว":` (อีก ${((p.tp/r-1)*100).toFixed(2)}%)`}`:"ยังไม่ตั้งเรทขาย"}${p.sl?` · ตัดขาดทุน <b>${fmt(p.sl,p.ccy)}</b> = ${baht(val(p.sl)-p.thb)}`:""}</div>
       ${status}
       <div style="display:flex;gap:4px;justify-content:flex-end">
         <button class="btn ghost" type="button" data-act="chart">ดูกราฟ</button>
@@ -413,7 +497,8 @@ function openForm(i){
   $("fCcy").innerHTML = CFG.currencies.map(c=>`<option value="${c}">${c}${mult(c)>1?" (ต่อ "+mult(c)+")":""} ${NAMES[c]||""}</option>`).join("");
   $("fCcy").value = p ? p.ccy : state.sel;
   $("fDate").value = p ? p.date : new Date().toISOString().slice(0,10);
-  $("fRate").value = p ? p.rate : (latest($("fCcy").value)||0).toFixed(3);
+  $("fNote").value = p && p.note ? p.note : (DEFAULT_NOTE[$("fCcy").value]||"");
+  $("fRate").value = p ? p.rate : buyPrefill($("fCcy").value);
   $("fThb").value = p ? p.thb : 10000;
   $("fSpread").value = p ? (p.spread||0) : 0.5;
   $("fTpRate").value = p && p.tp ? p.tp : ""; $("fSlRate").value = p && p.sl ? p.sl : "";
@@ -425,20 +510,30 @@ function openForm(i){
 function closeForm(){ $("posForm").hidden = true; $("addBtn").hidden = false; editing = -1; }
 function draft(){
   return {ccy:$("fCcy").value, date:$("fDate").value, rate:+$("fRate").value, thb:+$("fThb").value,
-          spread:+$("fSpread").value||0, tp:+$("fTpRate").value||null, sl:+$("fSlRate").value||null};
+          spread:+$("fSpread").value||0, tp:+$("fTpRate").value||null, sl:+$("fSlRate").value||null, note:+$("fNote").value||null};
 }
 function syncFromRate(k){ const p=draft(), r=+$(`f${k}Rate`).value; if(!(p.rate>0&&p.thb>0)) return;
   $(`f${k}Thb`).value = r>0 ? Math.round(Math.abs(valueAt(p,r)-p.thb)) : ""; }
 function syncFromThb(k){ const p=draft(), v=+$(`f${k}Thb`).value; if(!(p.rate>0&&p.thb>0)) return;
   $(`f${k}Rate`).value = v>0 ? rateFor(p, k==="Tp"?v:-v).toFixed(prec(p.ccy)) : ""; }
+function buyPrefill(c){
+  const qs = quotes(c);
+  const v = qs.length ? Math.min(...qs.map(q=>q[3])) : (latest(c)||0);
+  return v.toFixed(prec(c));
+}
 function preview(){
   const p = draft(), box = $("fPreview");
   $("fRateLab").textContent = `เรทที่ซื้อ (บาทต่อ ${mult(p.ccy)>1?mult(p.ccy)+" ":"1 "}${p.ccy})`;
   if (!(p.rate>0 && p.thb>0)){ box.textContent = "ใส่เรทที่ซื้อและจำนวนเงินบาท"; return; }
-  const r = latest(p.ccy);
+  const sb = sellback(p);
   const lines = [`จะได้ <b>${units(p).toLocaleString("th-TH",{maximumFractionDigits:2})} ${p.ccy}</b>`];
-  if (r) lines.push(`ถ้าขายที่เรทล่าสุด ${fmt(r,p.ccy)} ได้ <b>${Math.round(valueAt(p,r)).toLocaleString("th-TH")}</b> บาท (${baht(valueAt(p,r)-p.thb)})`);
-  lines.push(`เรทขายที่ไม่ขาดทุน (หักส่วนต่างแล้ว) <b>${fmt(rateFor(p,0),p.ccy)}</b>`);
+  const qs = quotes(p.ccy, p.note);
+  if (qs.length){
+    const cheap = qs.reduce((a,x)=>x[3]<a[3]?x:a);
+    lines.push(`ซื้อถูกสุดตอนนี้: <b>${esc(cheap[0])}</b> ขาย ${fmt(cheap[3],p.ccy)}`);
+  }
+  if (sb) lines.push(`ถ้าขายคืนตอนนี้${sb.shop?` ที่ ${esc(sb.shop)} (รับซื้อ ${fmt(sb.rate,p.ccy)})`:` (ECB ${fmt(sb.rate,p.ccy)})`} ได้ <b>${Math.round(sb.value).toLocaleString("th-TH")}</b> บาท (${baht(sb.value-p.thb)})`);
+  lines.push(`เรทรับซื้อที่ขายคืนแล้วไม่ขาดทุน <b>${fmt(rateFor(p,0),p.ccy)}</b>`);
   if (p.tp) lines.push(`ขายที่ ${fmt(p.tp,p.ccy)} → <b>${baht(valueAt(p,p.tp)-p.thb)}</b>`);
   if (p.sl) lines.push(`ตัดขาดทุนที่ ${fmt(p.sl,p.ccy)} → <b>${baht(valueAt(p,p.sl)-p.thb)}</b>`);
   box.innerHTML = lines.map(l=>`<div>${l}</div>`).join("");
@@ -454,8 +549,8 @@ function commit(msg){
 }
 ["Tp","Sl"].forEach(k=>{ $(`f${k}Rate`).addEventListener("input",()=>{syncFromRate(k);preview();});
                        $(`f${k}Thb`).addEventListener("input",()=>{syncFromThb(k);preview();}); });
-["fRate","fThb","fSpread"].forEach(id=>$(id).addEventListener("input",()=>{syncFromRate("Tp");syncFromRate("Sl");preview();}));
-$("fCcy").addEventListener("change",()=>{ $("fRate").value=(latest($("fCcy").value)||0).toFixed(prec($("fCcy").value)); $("fTpRate").value=""; $("fSlRate").value=""; $("fTpThb").value=""; $("fSlThb").value=""; preview(); });
+["fRate","fThb","fSpread","fNote"].forEach(id=>$(id).addEventListener("input",()=>{syncFromRate("Tp");syncFromRate("Sl");preview();}));
+$("fCcy").addEventListener("change",()=>{ $("fNote").value=DEFAULT_NOTE[$("fCcy").value]||""; $("fRate").value=buyPrefill($("fCcy").value); $("fTpRate").value=""; $("fSlRate").value=""; $("fTpThb").value=""; $("fSlThb").value=""; preview(); });
 $("addBtn").onclick = ()=>openForm(-1);
 $("fCancel").onclick = closeForm;
 $("posForm").addEventListener("submit", e=>{
@@ -488,6 +583,7 @@ function signals(){
 
 async function load(){
   try{ const r = await fetch("config.json",{cache:"no-store"}); if (r.ok) CFG = Object.assign(CFG, await r.json()); }catch(e){}
+  try{ const r = await fetch("rates.json",{cache:"no-store"}); if (r.ok) SHOPS = await r.json(); }catch(e){}
   if (!CFG.currencies.includes(state.sel)) state.sel = CFG.currencies[0];
   try{
     const start = new Date(); start.setDate(start.getDate()-5*366-40);
@@ -575,7 +671,7 @@ function render(){
   if (!state.daily) return;
   document.querySelectorAll("#tf button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===state.tf));
   document.querySelectorAll("#range button").forEach(b=>b.setAttribute("aria-pressed", +b.dataset.v===state.range));
-  renderThb(); renderPositions(); renderSignals(); renderChips(); renderChart();
+  renderThb(); renderShops(); renderPositions(); renderSignals(); renderChips(); renderChart();
 }
 $("tf").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.tf=v; render(); } };
 $("range").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.range=+v; render(); } };
