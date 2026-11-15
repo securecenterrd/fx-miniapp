@@ -233,6 +233,19 @@ select{font-family:var(--sans)}
     <span id="lgShops" hidden><span class="sw" style="background:var(--sr)"></span>SuperRich <span class="sw" style="background:var(--ld)"></span>Linda (เส้นทึบ = รับซื้อ, ประ = ขาย)</span>
     <span>แท่งเขียว = บาทอ่อน · แดง = บาทแข็ง</span>
   </div>
+  <section class="card" aria-label="วิเคราะห์กราฟ" id="taCard" hidden>
+    <h2>วิเคราะห์กราฟรายวัน <span id="taDate" style="text-transform:none;letter-spacing:0"></span></h2>
+    <div class="thb-verdict" id="taVerdict"></div>
+    <div class="facts">
+      <div>คาด 1 สัปดาห์<b id="taMid">–</b></div>
+      <div>แนวรับ<b id="taSup">–</b></div>
+      <div>แนวต้าน<b id="taRes">–</b></div>
+    </div>
+    <div class="pos-sub" id="taRange"></div>
+    <ul id="taNotes" style="margin:0;padding-left:0;list-style:none;font-size:.84rem;display:grid;gap:2px"></ul>
+    <div class="disclaimer" id="taBt"></div>
+  </section>
+
   <section class="card" aria-label="พยากรณ์" id="fcCard" hidden>
     <h2>พยากรณ์ <span id="fcPair" style="text-transform:none;letter-spacing:0"></span></h2>
     <div class="shop-tbl-wrap"><table class="shop-tbl" id="fcTbl"></table></div>
@@ -307,6 +320,17 @@ select{font-family:var(--sans)}
         <li>บอทเช็ควันละ 2 รอบ (10:00, 17:00) แจ้งเมื่อ <b>เรทที่ร้านขายให้คุณ</b> (SuperRich หรือ Linda ร้านไหนถูกกว่า) ≤ ราคาที่ตั้ง แจ้งครั้งเดียวต่อรายการ</li>
       </ol>
       <p>ต้องเปิดแอปจากปุ่ม <b>📊 กราฟ / ตั้งราคาซื้อ</b> ใต้ช่องพิมพ์ แล้วตั้ง/ลบ เพื่อให้บอทได้รับ</p>
+    </details>
+
+    <details>
+      <summary>วิเคราะห์กราฟรายวัน 📐</summary>
+      <p>บอทวิเคราะห์ทุกเช้า (ส่ง Telegram วันละครั้ง) และแสดงในการ์ด “วิเคราะห์กราฟรายวัน” ของสกุลที่เลือก ใช้ราคาปิดรายวัน ECB:</p>
+      <ul>
+        <li><b>แนวโน้ม</b>: ราคาเทียบ SMA20/50/200 และความชัน, Golden/Death Cross</li>
+        <li><b>MACD</b> (12,26,9), <b>RSI</b> (14) ซื้อ/ขายมากเกิน, <b>Bollinger</b> (20,2) และ Squeeze</li>
+        <li><b>แนวรับ/แนวต้าน</b> จากจุดกลับตัว 80 วัน, Breakout กรอบ 20 วัน, <b>RSI Divergence</b></li>
+      </ul>
+      <p>รวมคะแนน: ≥ +1.5 แนวโน้มขึ้น (บาทอ่อน), ≤ −1.5 แนวโน้มลง (บาทแข็ง), ระหว่างนั้น ไซด์เวย์ · ช่วงคาด 1 สัปดาห์มาจากความผันผวนรายวัน · ใต้การ์ดแสดงสถิติว่าทายทิศถูกกี่ % ในปีที่ผ่านมา</p>
     </details>
 
     <details>
@@ -386,6 +410,23 @@ function closedWeeks(series){
   if (day !== 6 && day !== 0 && w.length && w.at(-1).time >= mIso) w.pop();
   return w;
 }
+// ---------- วิเคราะห์กราฟรายวัน (ta.json จากบอท) ----------
+let TA = null;
+function renderTA(){
+  const c = state.sel, a = TA && TA.currencies && TA.currencies[c];
+  if (!a){ $("taCard").hidden = true; return; }
+  const word = {up:["▲ แนวโน้มขึ้น","บาทอ่อน","up"], down:["▼ แนวโน้มลง","บาทแข็ง","down"], flat:["➖ ไซด์เวย์","ยังไม่เลือกทาง",""]}[a.direction] || ["–","",""];
+  $("taVerdict").innerHTML = `<span class="${word[2]}">${word[0]}</span> <span style="font-weight:400;font-size:.9rem">(${word[1]}) · คะแนน ${(+a.score>=0?"+":"")+(+a.score).toFixed(1)}</span>`;
+  $("taMid").textContent = fmt(+a.mid,c); $("taSup").textContent = fmt(+a.support,c); $("taRes").textContent = fmt(+a.resistance,c);
+  $("taRange").textContent = `ช่วง 80% ใน 1 สัปดาห์: ${fmt(+a.lo80,c)}–${fmt(+a.hi80,c)} · RSI ${(+a.rsi).toFixed(0)}`;
+  $("taNotes").innerHTML = (a.notes||[]).filter(n=>+n[0]!==0 || String(n[1]).includes("Squeeze"))
+    .map(n=>`<li><span class="${+n[0]>0?"up":+n[0]<0?"down":""}">${+n[0]>0?"+":+n[0]<0?"−":"•"}</span> ${esc(n[1])}</li>`).join("");
+  const b = a.bt;
+  $("taBt").textContent = b ? `สถิติย้อนหลัง 1 ปี: ทายทิศถูก ${b.hit_pct==null?"–":(+b.hit_pct).toFixed(0)+"%"} จาก ${b.calls} ครั้ง · ช่วง 80% ครอบจริง ${(+b.cover80).toFixed(0)}% · ใช้ราคาปิดรายวัน ECB` : "";
+  $("taDate").textContent = TA.date ? `· ปิด ${TA.date}` : "";
+  $("taCard").hidden = false;
+}
+
 // ---------- พยากรณ์ (เหมือน forecast.py) ----------
 const Z50 = 0.6745, Z80 = 1.2816;
 function ncdf(x){ const t=1/(1+0.2316419*Math.abs(x)), d=0.3989423*Math.exp(-x*x/2);
@@ -784,6 +825,7 @@ function signals(){
 async function load(){
   try{ const r = await fetch("config.json",{cache:"no-store"}); if (r.ok) CFG = Object.assign(CFG, await r.json()); }catch(e){}
   try{ const r = await fetch("rates.json",{cache:"no-store"}); if (r.ok) SHOPS = await r.json(); }catch(e){}
+  try{ const r = await fetch("ta.json",{cache:"no-store"}); if (r.ok) TA = await r.json(); }catch(e){}
   if (!CFG.currencies.includes(state.sel)) state.sel = CFG.currencies[0];
   try{
     const start = new Date(); start.setDate(start.getDate()-5*366-40);
@@ -887,6 +929,11 @@ function renderChart(){
     shopHist[key] = chart.addLineSeries({color:shopCol[key], lineWidth:2, lineStyle:1, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false});
     shopHist[key].setData(pts);
   });
+  const tc = TA && TA.currencies && TA.currencies[c];
+  if (tc){
+    plines.push(cs.createPriceLine({price:+tc.support,color:css("--muted"),lineWidth:1,lineStyle:1,axisLabelVisible:false,title:"แนวรับ"}));
+    plines.push(cs.createPriceLine({price:+tc.resistance,color:css("--muted"),lineWidth:1,lineStyle:1,axisLabelVisible:false,title:"แนวต้าน"}));
+  }
   buyAlerts.filter(a=>a.ccy===c).forEach(a=>{
     plines.push(cs.createPriceLine({price:a.price,color:css("--accent"),lineWidth:2,lineStyle:3,axisLabelVisible:true,title:"🛒 แจ้งซื้อ"}));
   });
@@ -911,7 +958,7 @@ function render(){
   if (!state.daily) return;
   document.querySelectorAll("#tf button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===state.tf));
   document.querySelectorAll("#range button").forEach(b=>b.setAttribute("aria-pressed", +b.dataset.v===state.range));
-  renderThb(); renderShops(); renderAlerts(); renderPositions(); renderSignals(); renderChips(); renderChart(); renderForecast();
+  renderThb(); renderShops(); renderAlerts(); renderPositions(); renderSignals(); renderChips(); renderChart(); renderForecast(); renderTA();
 }
 $("tf").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.tf=v; render(); } };
 $("range").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.range=+v; render(); } };
