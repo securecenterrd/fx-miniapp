@@ -92,6 +92,15 @@ select{font-family:var(--sans)}
 .preview{font-size:.85rem;background:var(--bg);border-radius:8px;padding:8px 10px;display:grid;gap:2px}
 .preview b{font-family:var(--mono);font-weight:500}
 .disclaimer{font-size:.7rem;color:var(--muted)}
+.tapbar{background:var(--panel);border-radius:12px;padding:10px 12px;display:grid;gap:8px;border:1px solid var(--accent)}
+.tapbar .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tapbar input{max-width:9em}
+.tap-hint{font-size:.75rem;color:var(--muted);text-align:center}
+.al{display:flex;justify-content:space-between;gap:8px;align-items:center;border-top:1px solid var(--line);padding-top:6px;font-size:.85rem}
+.al:first-child{border-top:0;padding-top:0}
+.al .m{font-family:var(--mono)}
+.al .sub{font-size:.75rem;color:var(--muted)}
+.al .hitb{color:var(--up);font-weight:600}
 .toast{font-size:.8rem;color:var(--up)}
 .shop-tbl-wrap{overflow-x:auto}
 .shop-tbl{width:100%;border-collapse:collapse;font-size:.82rem;font-variant-numeric:tabular-nums}
@@ -147,6 +156,11 @@ select{font-family:var(--sans)}
     <div class="disclaimer">รับซื้อ = ร้านซื้อคืนจากคุณ · ขาย = ร้านขายให้คุณ · เทียบธนบัตรใบใหญ่ (เช่น USD 100) · <b class="best-b">ตัวหนา</b> = ดีกว่าสำหรับคุณ · เรทเปลี่ยนได้ตลอดวัน โทรเช็คสาขาก่อนไป</div>
   </section>
 
+  <section class="card" aria-label="แจ้งเตือนเข้าซื้อ">
+    <h2>แจ้งเตือนเข้าซื้อ <span style="text-transform:none;letter-spacing:0">· แตะกราฟเพื่อเพิ่ม</span></h2>
+    <div id="alerts"><span class="none">ยังไม่มี แตะที่กราฟตรงราคาที่อยากซื้อ บอทจะแจ้งเมื่อร้านขายถึงราคานั้น</span></div>
+  </section>
+
   <section class="card" aria-label="รายการซื้อของฉัน">
     <h2>รายการซื้อของฉัน <button class="btn ghost" type="button" id="addBtn">+ ตั้งราคาซื้อ</button></h2>
     <div id="positions"><span class="none">ยังไม่มีรายการ กด “+ ตั้งราคาซื้อ” เพื่อบันทึกเรทที่จะซื้อสัปดาห์นี้</span></div>
@@ -199,6 +213,18 @@ select{font-family:var(--sans)}
     <div class="seg" id="range"><button type="button" data-v="3">3ด</button><button type="button" data-v="6">6ด</button><button type="button" data-v="12">1ปี</button><button type="button" data-v="36">3ปี</button><button type="button" data-v="60">5ปี</button></div>
   </div>
   <div id="chart"></div>
+  <div class="tap-hint" id="tapHint">แตะที่กราฟเพื่อตั้งราคาแจ้งเตือนเข้าซื้อ</div>
+  <div class="tapbar" id="tapBar" hidden>
+    <div><b>ตั้งแจ้งเตือนเข้าซื้อ <span id="tapCcy"></span></b></div>
+    <div class="row">
+      <label for="tapPrice" style="display:flex;gap:6px;align-items:center">แจ้งเมื่อร้านขายที่ ≤ <input id="tapPrice" type="number" step="0.001" inputmode="decimal"></label>
+    </div>
+    <div class="pos-sub" id="tapInfo"></div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn ghost" type="button" id="tapCancel">ยกเลิก</button>
+      <button class="btn" type="button" id="tapSave">ตั้งแจ้งเตือน</button>
+    </div>
+  </div>
   <div class="legend">
     <span><span class="sw" style="background:var(--accent)"></span>MA10</span>
     <span><span class="sw" style="background:var(--ma2)"></span>MA20</span>
@@ -270,6 +296,17 @@ select{font-family:var(--sans)}
       </ul>
       <p><b>สำคัญ:</b> บอทจะรู้รายการซื้อก็ต่อเมื่อเปิดแอปจากปุ่ม <b>📊 กราฟ / ตั้งราคาซื้อ</b> ใต้ช่องพิมพ์ในแชตบอท แล้วกดบันทึก ถ้าเปิดจากปุ่มในข้อความหรือเมนู แอปจะบันทึกไว้ดูในแอปอย่างเดียว</p>
       <p>Telegram เก็บข้อมูลที่ส่งให้บอทไว้ 24 ชั่วโมง ถ้าคอมที่รันบอทไม่ได้เปิดภายใน 24 ชม. ให้เปิดแอปจากปุ่มนั้นแล้วกดบันทึกใหม่</p>
+    </details>
+
+    <details>
+      <summary>แจ้งเตือนเข้าซื้อ 🛒</summary>
+      <ol>
+        <li>เลือกสกุลเงิน แล้ว <b>แตะที่กราฟ</b> ตรงระดับราคาที่อยากซื้อ</li>
+        <li>ปรับตัวเลขได้ แอปบอกเรทร้านขายถูกสุดตอนนี้ และโอกาสที่จะลงถึงราคานั้นใน 1 / 4 สัปดาห์ (จากพยากรณ์)</li>
+        <li>กด <b>ตั้งแจ้งเตือน</b> — เส้น 🛒 จะขึ้นบนกราฟ</li>
+        <li>บอทเช็ควันละ 2 รอบ (10:00, 17:00) แจ้งเมื่อ <b>เรทที่ร้านขายให้คุณ</b> (SuperRich หรือ Linda ร้านไหนถูกกว่า) ≤ ราคาที่ตั้ง แจ้งครั้งเดียวต่อรายการ</li>
+      </ol>
+      <p>ต้องเปิดแอปจากปุ่ม <b>📊 กราฟ / ตั้งราคาซื้อ</b> ใต้ช่องพิมพ์ แล้วตั้ง/ลบ เพื่อให้บอทได้รับ</p>
     </details>
 
     <details>
@@ -455,6 +492,77 @@ function cleanPos(p){
 }
 const KEY = "fx_positions";
 const hasCloud = !!(tg && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast("6.9"));
+// ---------- แจ้งเตือนเข้าซื้อ (แตะกราฟ) ----------
+let buyAlerts = [];
+const AKEY = "fx_buy_alerts";
+function cleanAlert(a){
+  if (!a || typeof a !== "object" || !Object.prototype.hasOwnProperty.call(NAMES, a.ccy)) return null;
+  const x = Number(a.price); if (!isFinite(x) || x <= 0 || x >= 1e6) return null;
+  return {id:String(a.id||"").replace(/[^a-z0-9]/gi,"").slice(0,20) || Date.now().toString(36), ccy:a.ccy, price:x,
+          created:String(a.created||"").replace(/[^0-9-]/g,"").slice(0,10)};
+}
+function loadList(key, cleaner){
+  return new Promise(res=>{
+    const parse = s=>{ try{ const v=JSON.parse(s||"[]"); return Array.isArray(v)?v.map(cleaner).filter(Boolean).slice(0,50):[]; }catch(e){ return []; } };
+    if (hasCloud) tg.CloudStorage.getItem(key,(err,v)=>res(err?[]:parse(v)));
+    else { try{ res(parse(localStorage.getItem(key))); }catch(e){ res([]); } }
+  });
+}
+function saveAlerts(){
+  const s = JSON.stringify(buyAlerts);
+  if (hasCloud) tg.CloudStorage.setItem(AKEY,s,()=>{});
+  try{ localStorage.setItem(AKEY,s); }catch(e){}
+}
+const cheapestSell = (c) => { const qs = quotes(c); return qs.length ? qs.reduce((a,x)=>x[3]<a[3]?x:a) : null; };
+// โอกาสที่เรทร้านขายจะลงถึงราคา ภายใน h สัปดาห์ (ประมาณจากพยากรณ์ ECB + ส่วนต่างร้านวันนี้, ณ สิ้นสัปดาห์)
+function probBuyHit(c, price, h){
+  const F = fcFor(c), cs0 = cheapestSell(c), ecb = latest(c);
+  if (!F || !cs0 || ecb==null) return null;
+  return 1 - probAbove(F.m, h, price - (cs0[3]-ecb));
+}
+function renderAlerts(){
+  const box = $("alerts");
+  if (!buyAlerts.length){ box.innerHTML = `<span class="none">ยังไม่มี แตะที่กราฟตรงราคาที่อยากซื้อ บอทจะแจ้งเมื่อร้านขายถึงราคานั้น</span>`; return; }
+  box.innerHTML = "";
+  buyAlerts.forEach((a,i)=>{
+    const cs0 = cheapestSell(a.ccy);
+    const hit = cs0 && cs0[3] <= a.price;
+    const p1 = probBuyHit(a.ccy, a.price, 1), p4 = probBuyHit(a.ccy, a.price, 4);
+    const el = document.createElement("div"); el.className = "al";
+    el.innerHTML = `<div><div><b>${a.ccy}</b> ร้านขาย ≤ <span class="m">${fmt(a.price,a.ccy)}</span> ${hit?'<span class="hitb">🛒 ถึงแล้ว</span>':""}</div>
+      <div class="sub">${cs0?`ถูกสุดตอนนี้ ${esc(cs0[0].split(" ")[0])} ${fmt(cs0[3],a.ccy)} (ห่าง ${((a.price/cs0[3]-1)*100).toFixed(2)}%)`:"ยังไม่มีเรทร้าน"}${p1!=null&&!hit?` · โอกาสถึงใน 1 สัปดาห์ ${pct(p1)} / 4 สัปดาห์ ${pct(p4)}`:""}</div></div>
+      <button class="btn danger" type="button">ลบ</button>`;
+    el.querySelector(".al > div").style.cursor = "pointer";
+    el.querySelector(".al > div").onclick = ()=>select(a.ccy);
+    el.querySelector("button").onclick = (e)=>{
+      const b = e.currentTarget;
+      if (b.dataset.armed){ buyAlerts.splice(i,1); commit("ลบแจ้งเตือนแล้ว"); }
+      else { b.dataset.armed = "1"; b.textContent = "กดอีกครั้ง"; }
+    };
+    box.appendChild(el);
+  });
+}
+function openTap(price){
+  const c = state.sel;
+  $("tapCcy").textContent = `${c}/THB`;
+  $("tapPrice").value = price.toFixed(prec(c));
+  $("tapBar").hidden = false; $("tapHint").hidden = true;
+  tapInfo();
+  if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+}
+function tapInfo(){
+  const c = state.sel, x = +$("tapPrice").value, cs0 = cheapestSell(c);
+  if (!(x>0)){ $("tapInfo").textContent = "ใส่ราคา"; return; }
+  const lines = [];
+  if (cs0){
+    lines.push(`ร้านขายถูกสุดตอนนี้: ${esc(cs0[0])} ${fmt(cs0[3],c)}` + (cs0[3] <= x ? " — ถูกกว่าราคานี้อยู่แล้ว บอทจะแจ้งรอบถัดไป" : ` (ต้องลงอีก ${((x/cs0[3]-1)*100).toFixed(2)}%)`));
+    const p1 = probBuyHit(c,x,1), p4 = probBuyHit(c,x,4);
+    if (p1!=null) lines.push(`🔮 โอกาสร้านขายลงถึงราคานี้: 1 สัปดาห์ ${pct(p1)} · 4 สัปดาห์ ${pct(p4)}`);
+  } else lines.push("ยังไม่มีเรทร้าน บอทจะใช้เรท ECB เทียบแทน");
+  $("tapInfo").innerHTML = lines.map(l=>`<div>${l}</div>`).join("");
+}
+function closeTap(){ $("tapBar").hidden = true; $("tapHint").hidden = false; }
+
 function loadPositions(){
   return new Promise(res=>{
     const parse = s=>{ try{ const v=JSON.parse(s||"[]"); return Array.isArray(v)?v.map(cleanPos).filter(Boolean).slice(0,50):[]; }catch(e){ return []; } };
@@ -478,7 +586,7 @@ function launchInfo(){
 function syncBot(){
   sendErr = "";
   if (!canSend()) return false;
-  try{ tg.sendData(JSON.stringify({v:1,positions})); return true; }catch(e){ sendErr = String(e && e.message || e); return false; }
+  try{ tg.sendData(JSON.stringify({v:2,positions,buy_alerts:buyAlerts})); return true; }catch(e){ sendErr = String(e && e.message || e); return false; }
 }
 const units = p => p.thb*mult(p.ccy)/p.rate;
 // มีเรทร้าน = ใช้เรทรับซื้อจริง ไม่ต้องหักส่วนต่าง · ไม่มี = ใช้ ECB หักส่วนต่างที่ตั้ง
@@ -631,7 +739,7 @@ function preview(){
   box.innerHTML = lines.map(l=>`<div>${l}</div>`).join("");
 }
 function commit(msg){
-  savePositions(); render();
+  savePositions(); saveAlerts(); render();
   const sent = syncBot();
   const t = $("toast"); t.hidden = false;
   t.textContent = msg + (sent ? " · ส่งให้บอทแล้ว บอทจะแจ้งเตือนเมื่อถึงเรทที่ตั้ง" :
@@ -714,7 +822,7 @@ function renderChips(){
     box.appendChild(b);
   });
 }
-function select(c){ state.sel=c; if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged(); render(); }
+function select(c){ if ($("tapBar")) closeTap(); state.sel=c; if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged(); render(); }
 
 let chart, cs, ma1, ma2, fcMid, fcLo, fcHi, plines = [], lastK = null, shopHist = {};
 function buildChart(){
@@ -733,6 +841,11 @@ function buildChart(){
   const fcOpt = w => ({color:css("--fc"),lineWidth:w,lineStyle:w>1?0:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
   fcMid = chart.addLineSeries(fcOpt(2)); fcLo = chart.addLineSeries(fcOpt(1)); fcHi = chart.addLineSeries(fcOpt(1));
   chart.subscribeCrosshairMove(p=>{ const d = p && p.time ? p.seriesData.get(cs) : null; showOhlc(d||lastK); });
+  chart.subscribeClick(param=>{
+    if (!param || !param.point) return;
+    const price = cs.coordinateToPrice(param.point.y);
+    if (price != null && isFinite(price) && price > 0) openTap(price);
+  });
 }
 function showOhlc(k){
   const c = state.sel; if (!k){ $("ohlc").textContent=""; return; }
@@ -774,6 +887,9 @@ function renderChart(){
     shopHist[key] = chart.addLineSeries({color:shopCol[key], lineWidth:2, lineStyle:1, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false});
     shopHist[key].setData(pts);
   });
+  buyAlerts.filter(a=>a.ccy===c).forEach(a=>{
+    plines.push(cs.createPriceLine({price:a.price,color:css("--accent"),lineWidth:2,lineStyle:3,axisLabelVisible:true,title:"🛒 แจ้งซื้อ"}));
+  });
   positions.filter(p=>p.ccy===c).forEach(p=>{
     plines.push(cs.createPriceLine({price:p.rate,color:css("--accent"),lineWidth:1,lineStyle:0,axisLabelVisible:true,title:"ซื้อ"}));
     if (p.tp) plines.push(cs.createPriceLine({price:p.tp,color:css("--up"),lineWidth:1,lineStyle:2,axisLabelVisible:true,title:"ขาย"}));
@@ -795,7 +911,7 @@ function render(){
   if (!state.daily) return;
   document.querySelectorAll("#tf button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===state.tf));
   document.querySelectorAll("#range button").forEach(b=>b.setAttribute("aria-pressed", +b.dataset.v===state.range));
-  renderThb(); renderShops(); renderPositions(); renderSignals(); renderChips(); renderChart(); renderForecast();
+  renderThb(); renderShops(); renderAlerts(); renderPositions(); renderSignals(); renderChips(); renderChart(); renderForecast();
 }
 $("tf").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.tf=v; render(); } };
 $("range").onclick = e=>{ const v=e.target.dataset.v; if(v){ state.range=+v; render(); } };
@@ -812,7 +928,12 @@ if (tg && tg.BackButton) tg.BackButton.onClick(closeHelp);
 document.addEventListener("keydown", e=>{ if (e.key === "Escape" && !$("help").hidden) closeHelp(); });
 
 buildChart();
-loadPositions().then(p=>{ positions = p; load(); });
+Promise.all([loadPositions(), loadList(AKEY, cleanAlert)]).then(([p,a])=>{ positions = p; buyAlerts = a; load(); });
+$("tapPrice").addEventListener("input", tapInfo);
+$("tapCancel").onclick = closeTap;
+$("tapSave").onclick = ()=>{ const x = +$("tapPrice").value; if (!(x>0)) return;
+  buyAlerts.push({id:Date.now().toString(36), ccy:state.sel, price:+x.toFixed(prec(state.sel)), created:new Date().toISOString().slice(0,10)});
+  closeTap(); commit("ตั้งแจ้งเตือนเข้าซื้อแล้ว"); };
 if (tg && tg.platform && tg.platform !== "unknown" && !canSend()){
   const t = $("toast"); t.hidden = false; t.style.whiteSpace = "pre-line"; t.style.color = "var(--muted)";
   t.textContent = "ดูกราฟได้ แต่ราคาซื้อที่บันทึกจากหน้านี้จะไม่ถึงบอท ถ้าจะให้บอทแจ้งเตือน ให้ปิดแล้วเปิดจากปุ่ม “📊 กราฟ / ตั้งราคาซื้อ” ใต้ช่องพิมพ์ (แตะไอคอนคีย์บอร์ด ⌨️ ถ้าไม่เห็นปุ่ม)\n[" + launchInfo() + "]";
